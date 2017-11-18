@@ -1,8 +1,8 @@
-﻿using System.Linq;
-using UnityEngine;
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
+using System.Linq;
 using UnityEditor;
 #endif
+using UnityEngine;
 
 [DisallowMultipleComponent]
 [ExecuteInEditMode]
@@ -60,12 +60,25 @@ public class Folder : MonoBehaviour {
 
         var existingComponents = GetComponents<Component>().Where((i) => i != null);
         foreach (var comp in existingComponents) {
+            bool shouldDestroy = false, asked = false;
+
             var type = comp.GetType();
             if (comp != this && type != typeof(Transform)) {
-                DestroyImmediate(comp);
-                EditorUtility.DisplayDialog("Can't add script",
-                                            "Can't add additional scripts to Folder objects, " +
-                                            "not like you would need to.", "OK");
+                // Ask if should destroy other components
+                if (!asked) {
+                    shouldDestroy = EditorUtility.DisplayDialog("Can't add script",
+                                                                "Folders shouldn't be used with " +
+                                                                "other components. Should the " +
+                                                                "folder be added/kept?", 
+                                                                "Yes", "No");
+                    asked = true;
+                }
+
+                if (shouldDestroy) {
+                    DestroyImmediate(comp);
+                } else {
+                    DestroyImmediate(this);
+                }
             }
         }
     }
@@ -76,7 +89,9 @@ public class Folder : MonoBehaviour {
     /// (If multiple objects are selected along with a folder, this turns off all of their gizmos.)
     /// </summary>
     private void HandleSelection() {
-        Tools.hidden |= Selection.activeGameObject == gameObject;
+        if (this != null) {
+            Tools.hidden |= Selection.activeGameObject == gameObject;
+        }
     }
 
     /// <summary>
