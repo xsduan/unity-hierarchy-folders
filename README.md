@@ -4,7 +4,7 @@ Creates specialized folder objects for Unity Hierarchy.
 
 ## How to install
 
-Drag the folder into your project and it should add all the necessary components automatically. Create Folder should be in the right-click menu on the hierarchy after the editor reloads.
+Drag `Assets/FolderAsset` into your project and it should add all the necessary components automatically. Create Folder should be in the right-click menu on the hierarchy after the editor reloads.
 
 ## FAQs I anticipate
 ### Why folders in the first place?
