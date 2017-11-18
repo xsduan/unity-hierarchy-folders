@@ -8,8 +8,17 @@ using UnityEditor;
 [ExecuteInEditMode]
 public class Folder : MonoBehaviour {
 #if UNITY_EDITOR
+    private static bool addedSelectionResetCallback;
     Folder() {
         EditorApplication.hierarchyWindowChanged += HandleAddedComponents;
+
+        // add reset callback first in queue
+        if (!addedSelectionResetCallback) {
+            Selection.selectionChanged += () => Tools.hidden = false;
+            addedSelectionResetCallback = true;
+        }
+
+        Selection.selectionChanged += HandleSelection;
     }
 #endif
 
@@ -62,20 +71,19 @@ public class Folder : MonoBehaviour {
     }
 
     /// <summary>
-    /// Hide gizmos and inspector to prevent accidental editing of transform.
+    /// Hides the transform gizmo if necessary to avoid accidental editing of transform.
     /// 
     /// (If multiple objects are selected along with a folder, this turns off all of their gizmos.)
     /// </summary>
-    private void OnEnable() {
-        this.transform.hideFlags = HideFlags.HideInInspector;
-        Tools.hidden = true;
+    private void HandleSelection() {
+        Tools.hidden |= Selection.activeGameObject == gameObject;
     }
 
     /// <summary>
-    /// Return gizmos to their normal state.
+    /// Hide inspector to prevent accidental editing of transform.
     /// </summary>
-    private void OnDisable() {
-        Tools.hidden = false;
+    private void OnEnable() {
+        this.transform.hideFlags = HideFlags.HideInInspector;
     }
 #endif
 
