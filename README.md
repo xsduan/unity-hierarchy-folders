@@ -2,6 +2,10 @@
 
 Creates specialized folder objects for Unity Hierarchy.
 
+## How to install
+
+Drag the folder into your project and it should add all the necessary components automatically. Create Folder should be in the right-click menu on the hierarchy after the editor reloads.
+
 ## FAQs I anticipate
 ### Why folders in the first place?
 
@@ -32,7 +36,3 @@ I can assure you that I have made this completely from scratch. If feel you can 
 ##### For projects
 
 If it is open source, I will gladly contribute to yours, just point me in the right direction.
-
-## How to install
-
-Drag the folder into your project and it should add all the necessary components automatically. Create Folder should be in the right-click menu on the hierarchy after the editor reloads.
