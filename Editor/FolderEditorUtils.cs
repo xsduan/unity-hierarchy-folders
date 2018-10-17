@@ -3,7 +3,9 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 
-public static class FlattenFolderBeforeBuild {
+public static class FolderEditorUtils {
+    const string actionName = "Create Heirarchy Folder";
+
     /// <summary>
     /// Flatten every folder in scene after scene has been processed.
     /// </summary>
@@ -16,10 +18,6 @@ public static class FlattenFolderBeforeBuild {
             Object.DestroyImmediate(folder.gameObject);
         }
     }
-}
-
-public static class AddFolder {
-    const string actionName = "Create Heirarchy Folder";
 
     /// <summary>
     /// Add new folder "prefab".
