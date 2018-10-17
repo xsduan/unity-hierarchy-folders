@@ -68,8 +68,7 @@ public class Folder : MonoBehaviour {
         }
 
         var existingComponents = GetComponents<Component>()
-            .Where(c => c != this && !typeof(Transform).IsAssignableFrom(c.GetType()))
-            .ToList();
+            .Where(c => c != this && !typeof(Transform).IsAssignableFrom(c.GetType()));
 
         // no items means no actions anyways
         if (!existingComponents.Any()) return;
@@ -93,31 +92,14 @@ public class Folder : MonoBehaviour {
     }
 #endif
 
-    private void Update() {
-        ResetTransform();
-
-        if (Application.isPlaying) {
-            FinishFlattening();
-        }
-    }
-
     /// <summary>
     /// Resets the transform properties to their identities, i.e. (0, 0, 0), (0˚, 0˚, 0˚), and
     /// (100%, 100%, 100%).
     /// </summary>
-    private void ResetTransform() {
+    private void Update() {
         transform.position = Vector3.zero;
         transform.rotation = Quaternion.identity;
         transform.localScale = new Vector3(1, 1, 1);
-    }
-
-    /// <summary>
-    /// Destroy object as it should have been when building.
-    /// </summary>
-    private void FinishFlattening() {
-        Debug.LogError("Folder \"" + name + "\" was supposed to be destroyed on build.");
-        Flatten();
-        Destroy(gameObject);
     }
 
     /// <summary>
@@ -131,5 +113,6 @@ public class Folder : MonoBehaviour {
                 child.parent = transform.parent;
             }
         }
+        Destroy(gameObject);
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
@@ -12,11 +12,8 @@ public static class FolderEditorUtils {
     /// </summary>
     [PostProcessScene]
     public static void Flatten() {
-        var folders = Object.FindObjectsOfType<Folder>().Where(i => i != null);
-
-        foreach (var folder in folders) {
+        foreach (var folder in UnityEngine.Object.FindObjectsOfType<Folder>()) {
             folder.Flatten();
-            Object.DestroyImmediate(folder.gameObject);
         }
     }
 
