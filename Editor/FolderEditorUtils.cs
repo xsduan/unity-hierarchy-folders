@@ -19,15 +19,18 @@ public static class FlattenFolderBeforeBuild {
 }
 
 public static class AddFolder {
+    const string actionName = "Create Heirarchy Folder";
+
     /// <summary>
     /// Add new folder "prefab".
     /// </summary>
     /// <param name="command">Menu command information.</param>
-    [MenuItem("GameObject/Create Folder", false, 0)]
+    [MenuItem("GameObject/" + actionName, false, 0)]
     public static void AddPrefab(MenuCommand command) {
         var obj = new GameObject { name = "Folder", tag = "EditorOnly" };
         obj.AddComponent<Folder>();
+
         GameObjectUtility.SetParentAndAlign(obj, (GameObject)command.context);
-        Undo.RegisterCreatedObjectUndo(obj, "Create Folder");
+        Undo.RegisterCreatedObjectUndo(obj, actionName);
     }
 }
