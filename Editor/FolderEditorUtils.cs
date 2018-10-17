@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -25,9 +25,7 @@ public static class AddFolder {
     /// <param name="command">Menu command information.</param>
     [MenuItem("GameObject/Create Folder", false, 0)]
     public static void AddPrefab(MenuCommand command) {
-        var obj = new GameObject {
-            name = "Folder"
-        };
+        var obj = new GameObject { name = "Folder", tag = "EditorOnly" };
         obj.AddComponent<Folder>();
         GameObjectUtility.SetParentAndAlign(obj, (GameObject)command.context);
         Undo.RegisterCreatedObjectUndo(obj, "Create Folder");
