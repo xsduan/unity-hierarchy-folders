@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using System.Linq;
 using UnityEditor;
 #endif
@@ -10,7 +10,7 @@ public class Folder : MonoBehaviour {
 #if UNITY_EDITOR
     private static bool addedSelectionResetCallback;
     Folder() {
-        EditorApplication.hierarchyWindowChanged += HandleAddedComponents;
+        EditorApplication.hierarchyChanged += HandleAddedComponents;
 
         // add reset callback first in queue
         if (!addedSelectionResetCallback) {
