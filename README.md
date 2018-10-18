@@ -23,7 +23,7 @@ and hopefully this will show up, e.g.:
 
 A "Create Folder" menu item should show up in the GameObject menu. Add
 `Tests/Example.unity` to your current scene for an example of what hierarchy
-folders can do for you!
+folders can do for you.
 
 The UPM does not have much documentation so it probably will be buggy, you're
 not going crazy!
@@ -47,7 +47,7 @@ objects.
 Sometimes empty GameObjects are used for other things and it's useful to have a
 specific type of object that should always be deleted on build.
 
-Besides! I did all the legwork, so you wouldn't have to!
+Besides, I did all the legwork, so you wouldn't have to!
 
 ### There's another product/widget that exists that does this exact task.
 
