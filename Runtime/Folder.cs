@@ -20,10 +20,10 @@ static class CanDestroyExtension {
     /// Checks whether the stated component can be destroyed without violating dependencies.
     /// </summary>
     /// <returns>Is component destroyable?</returns>
-    /// <param name="g">The GameObject to search.</param>
     /// <param name="t">Component candidate for destruction.</param>
-    internal static bool CanDestroy(this GameObject g, Component t) {
-        return !g.GetComponents<Component>().Any(c => Requires(c.GetType(), t.GetType()));
+    internal static bool CanDestroy(this Component t) {
+        return !t.gameObject.GetComponents<Component>()
+                 .Any(c => Requires(c.GetType(), t.GetType()));
     }
 }
 #endif
@@ -71,12 +71,12 @@ public class Folder : MonoBehaviour {
     /// </summary>
     /// <param name="comps">Which components to delete.</param>
     private void DeleteComponents(IEnumerable<Component> comps) {
-        var destroyable = comps.Where(c => c != null && c.gameObject.CanDestroy(c));
+        var destroyable = comps.Where(c => c != null && c.CanDestroy());
 
         // keep cycling through the list of components until all components are gone.
         while (destroyable.Any()) {
             foreach (var c in destroyable) {
-                if (c.gameObject.CanDestroy(c)) {
+                if (c.CanDestroy()) {
                     DestroyImmediate(c);
                 }
             }
