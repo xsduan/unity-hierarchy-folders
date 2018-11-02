@@ -25,8 +25,8 @@ A "Create Folder" menu item should show up in the GameObject menu. Add
 `Tests/Example.unity` to your current scene for an example of what hierarchy
 folders can do for you.
 
-The UPM does not have much documentation so it probably will be buggy, you're
-not going crazy!
+The UPM does not have much documentation at the moment so it probably will be
+buggy, you're not going crazy!
 
 ## Possible FAQs
 
