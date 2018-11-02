@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 
@@ -28,25 +26,5 @@ public static class FolderEditorUtils {
 
         GameObjectUtility.SetParentAndAlign(obj, (GameObject)command.context);
         Undo.RegisterCreatedObjectUndo(obj, actionName);
-    }
-}
-
-// taken from: https://gamedev.stackexchange.com/a/140799
-static class CanDestroyExtension {
-    private static bool Requires(Type obj, Type req) {
-        return Attribute.IsDefined(obj, typeof(RequireComponent)) &&
-               Attribute.GetCustomAttributes(obj, typeof(RequireComponent))
-                        .OfType<RequireComponent>()
-                        .Any(rc => rc.m_Type0.IsAssignableFrom(req));
-    }
-
-    /// <summary>
-    /// Checks whether the stated component can be destroyed without violating dependencies.
-    /// </summary>
-    /// <returns>Is component destroyable?</returns>
-    /// <param name="g">The GameObject to search.</param>
-    /// <param name="t">Component candidate for destruction.</param>
-    internal static bool CanDestroy(this GameObject g, Component t) {
-        return !g.GetComponents<Component>().Any(c => Requires(c.GetType(), t.GetType()));
     }
 }
