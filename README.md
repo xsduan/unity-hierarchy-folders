@@ -4,13 +4,22 @@ Specialized folder objects for Unity Hierarchy.
 
 ## Installation
 
-This uses the new UPM system introduced in `2017.2` (and something something
-`2018.1`?). The old copy-into-Assets method still works perfectly decent so if
-you don't want to bother with UPM just copy the `Editor` and `Runtime` folders
-into your project.
+This uses the new UPM system. The old copy-into-Assets method still works
+perfectly decent so if you don't want to bother with UPM just copy the `Editor`
+and `Runtime` folders into your project.
 
-In any case, simply add a relative link to this folder in your `manifest.json`
-and hopefully this will show up, e.g.:
+To add this project, add a [git dependency][1] in your `manifest.json`:
+
+```json
+{
+  "dependencies": {
+    "com.unity.package-manager-ui": "1.9.11",
+    "com.xsduan.hierarchy-folders": "https://github.com/xsduan/unity-hierarchy-folders.git"
+  }
+}
+```
+
+Older versions of Unity may have to use the relative link, ie:
 
 ```json
 {
@@ -20,8 +29,6 @@ and hopefully this will show up, e.g.:
   }
 }
 ```
-
-<sup>[(2018.3.0b7 and above can also use git links as well.)][1]</sup>
 
 A "Create Folder" menu item should show up in the GameObject menu. Add
 `Tests/Example.unity` to your current scene for an example of what hierarchy
