@@ -16,7 +16,7 @@ and hopefully this will show up, e.g.:
 {
   "dependencies": {
     "com.unity.package-manager-ui": "1.9.11",
-    "com.xsduan.heirarchy-folders": "file:../../unity-hierarchy-folders"
+    "com.xsduan.hierarchy-folders": "file:../../unity-hierarchy-folders"
   }
 }
 ```
