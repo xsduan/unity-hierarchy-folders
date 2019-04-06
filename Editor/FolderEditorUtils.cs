@@ -44,8 +44,6 @@ namespace UnityHierarchyFolders.Editor
 
 	    public void OnProcessScene(UnityEngine.SceneManagement.Scene scene, BuildReport report){
 
-		    Debug.Log(scene.name + ": root objects #" + scene.rootCount);
-
 		    foreach (var folder in UnityEngine.Object.FindObjectsOfType<Folder>())
 		    {
 			    folder.Flatten();
