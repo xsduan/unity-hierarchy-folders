@@ -163,8 +163,8 @@ namespace UnityHierarchyFolders.Runtime
                     child.parent = transform.parent;
                 }
             }
-
-            Destroy(gameObject);
+            if(Application.isPlaying) Destroy(gameObject);
+			else DestroyImmediate(gameObject);
         }
     }
 }
