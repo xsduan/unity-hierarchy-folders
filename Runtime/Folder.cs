@@ -155,7 +155,7 @@ namespace UnityHierarchyFolders.Runtime
         public void Flatten()
         {
             // gather first-level children
-            foreach (Transform child in transform.GetComponentsInChildren<Transform>())
+            foreach (Transform child in transform.GetComponentsInChildren<Transform>(true))
             {
                 if (child.parent == transform)
                 {
