@@ -126,7 +126,7 @@ namespace UnityHierarchyFolders.Runtime
 
         private void OnEnable()
         {
-            tag = "EditorOnly";
+            // tag = "EditorOnly";
 
             // Hide inspector to prevent accidental editing of transform.
             this.transform.hideFlags = HideFlags.HideInInspector;
@@ -134,7 +134,7 @@ namespace UnityHierarchyFolders.Runtime
 
         private void OnDestroy()
         {
-            tag = "Untagged";
+            // tag = "Untagged";
         }
 #endif
 
