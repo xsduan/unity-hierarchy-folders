@@ -1,8 +1,8 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
-using UnityEditor.Callbacks;
 using UnityHierarchyFolders.Runtime;
 
 namespace UnityHierarchyFolders.Editor
@@ -10,18 +10,6 @@ namespace UnityHierarchyFolders.Editor
     public static class FolderEditorUtils
     {
         const string actionName = "Create Heirarchy Folder";
-
-        /// <summary>
-        /// Flatten every folder in scene after scene has been processed.
-        /// </summary>
-        [PostProcessScene]
-        public static void Flatten()
-        {
-            foreach (var folder in UnityEngine.Object.FindObjectsOfType<Folder>())
-            {
-                folder.Flatten();
-            }
-        }
 
         /// <summary>
         /// Add new folder "prefab".
@@ -39,14 +27,12 @@ namespace UnityHierarchyFolders.Editor
     }
 
     public class FolderOnBuild : IProcessSceneWithReport {
-
 	    public int callbackOrder { get { return 0; } }
 
-	    public void OnProcessScene(UnityEngine.SceneManagement.Scene scene, BuildReport report){
-
-		    foreach (var folder in UnityEngine.Object.FindObjectsOfType<Folder>())
+	    public void OnProcessScene(Scene scene, BuildReport report){
+		    foreach (var folder in Object.FindObjectsOfType<Folder>())
 		    {
-			    folder.Flatten();
+                folder.Flatten();
 		    }
 	    }
     }    
