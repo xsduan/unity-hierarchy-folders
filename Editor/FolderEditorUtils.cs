@@ -15,7 +15,7 @@ namespace UnityHierarchyFolders.Editor
         /// Add new folder "prefab".
         /// </summary>
         /// <param name="command">Menu command information.</param>
-        [MenuItem("GameObject/" + actionName, false, 0)]
+        [MenuItem("GameObject/" + actionName, isValidateFunction: false, priority: 0)]
         public static void AddFolderPrefab(MenuCommand command)
         {
             var obj = new GameObject {name = "Folder"};
