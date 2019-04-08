@@ -20,9 +20,7 @@ namespace UnityHierarchyFolders.Runtime
                        .Any(rc => rc.m_Type0.IsAssignableFrom(req));
         }
 
-        /// <summary>
-        /// Checks whether the stated component can be destroyed without violating dependencies.
-        /// </summary>
+        /// <summary>Checks whether the stated component can be destroyed without violating dependencies.</summary>
         /// <returns>Is component destroyable?</returns>
         /// <param name="t">Component candidate for destruction.</param>
         internal static bool CanDestroy(this Component t)
@@ -49,21 +47,18 @@ namespace UnityHierarchyFolders.Runtime
                 addedSelectionResetCallback = true;
             }
 
-            Selection.selectionChanged += HandleSelection;
+            Selection.selectionChanged += this.HandleSelection;
         }
 
         /// <summary>
-        /// <para>Hides the transform gizmo if necessary to avoid accidental editing of the
-        /// position.</para>
-        /// 
-        /// <para>(If multiple objects are selected along with a folder, this turns off all of their
-        /// gizmos.)</para>
+        /// <para>Hides the transform gizmo if necessary to avoid accidental editing of the position.</para>
+        /// <para>(If multiple objects are selected along with a folder, this turns off all of their gizmos.)</para>
         /// </summary>
         private void HandleSelection()
         {
             if (this != null)
             {
-                Tools.hidden |= Selection.activeGameObject == gameObject;
+                Tools.hidden |= Selection.activeGameObject == this.gameObject;
             }
         }
 
@@ -71,16 +66,13 @@ namespace UnityHierarchyFolders.Runtime
         {
             return EditorUtility.DisplayDialog(
                 title: "Can't add script",
-                message: "Folders shouldn't be used with other components. Which component should " +
-                         "be kept?",
+                message: "Folders shouldn't be used with other components. Which component should be kept?",
                 ok: "Folder",
                 cancel: "Component"
             );
         }
 
-        /// <summary>
-        /// Delete all components regardless of dependency hierarchy.
-        /// </summary>
+        /// <summary>Delete all components regardless of dependency hierarchy.</summary>
         /// <param name="comps">Which components to delete.</param>
         private void DeleteComponents(IEnumerable<Component> comps)
         {
@@ -108,15 +100,18 @@ namespace UnityHierarchyFolders.Runtime
                 return;
             }
 
-            var existingComponents = GetComponents<Component>()
+            var existingComponents = this.GetComponents<Component>()
                 .Where(c => c != this && !typeof(Transform).IsAssignableFrom(c.GetType()));
 
             // no items means no actions anyways
-            if (!existingComponents.Any()) return;
-
-            if (AskDelete())
+            if (!existingComponents.Any())
             {
-                DeleteComponents(existingComponents);
+                return;
+            }
+
+            if (this.AskDelete())
+            {
+                this.DeleteComponents(existingComponents);
             }
             else
             {
@@ -132,32 +127,35 @@ namespace UnityHierarchyFolders.Runtime
 #endif
 
         /// <summary>
-        /// Resets the transform properties to their identities, i.e. (0, 0, 0), (0˚, 0˚, 0˚), and
-        /// (100%, 100%, 100%).
+        /// Resets the transform properties to their identities, i.e. (0, 0, 0), (0˚, 0˚, 0˚), and (100%, 100%, 100%).
         /// </summary>
         private void Update()
         {
-            transform.position = Vector3.zero;
-            transform.rotation = Quaternion.identity;
-            transform.localScale = new Vector3(1, 1, 1);
+            this.transform.position = Vector3.zero;
+            this.transform.rotation = Quaternion.identity;
+            this.transform.localScale = new Vector3(1, 1, 1);
         }
 
-        /// <summary>
-        /// Takes direct children and links them to the parent transform or global.
-        /// </summary>
+        /// <summary>Takes direct children and links them to the parent transform or global.</summary>
         public void Flatten()
         {
             // gather first-level children
-            foreach (Transform child in transform.GetComponentsInChildren<Transform>(includeInactive: true))
+            foreach (Transform child in this.transform.GetComponentsInChildren<Transform>(includeInactive: true))
             {
-                if (child.parent == transform)
+                if (child.parent == this.transform)
                 {
-                    child.name = name + '/' + child.name;
-                    child.parent = transform.parent;
+                    child.name = this.name + '/' + child.name;
+                    child.parent = this.transform.parent;
                 }
             }
-            if(Application.isPlaying) Destroy(gameObject);
-			else DestroyImmediate(gameObject);
+            if (Application.isPlaying)
+            {
+                Destroy(this.gameObject);
+            }
+            else
+            {
+                DestroyImmediate(this.gameObject);
+            }
         }
     }
 }
