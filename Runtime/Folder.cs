@@ -58,15 +58,28 @@ namespace UnityHierarchyFolders.Runtime
             Selection.selectionChanged += this.HandleSelection;
         }
 
-        /// <summary>
-        /// <para>Hides the transform gizmo if necessary to avoid accidental editing of the position.</para>
-        /// <para>(If multiple objects are selected along with a folder, this turns off all of their gizmos.)</para>
-        /// </summary>
+        private static Tool lastTool;
+        private static Folder toolLock;
+
+        /// <summary>Hides all gizmos if selected to avoid accidental editing of the transform.</summary>
         private void HandleSelection()
         {
-            if (this != null)
+            // ignore if another folder object is already hiding gizmo
+            if (toolLock != null && toolLock != this)
             {
-                Tools.hidden |= Selection.activeGameObject == this.gameObject;
+                return;
+            }
+
+            if (this != null && Selection.Contains(this.gameObject))
+            {
+                lastTool = Tools.current;
+                toolLock = this;
+                Tools.current = Tool.None;
+            }
+            else if (toolLock != null)
+            {
+                Tools.current = lastTool;
+                toolLock = null;
             }
         }
 
@@ -93,10 +106,10 @@ namespace UnityHierarchyFolders.Runtime
                 {
                     if (c.CanDestroy())
                     {
-                        DestroyImmediate(c);
-                    }
+                    DestroyImmediate(c);
                 }
             }
+        }
         }
 
         private void OnGUI()
