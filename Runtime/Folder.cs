@@ -106,12 +106,9 @@ namespace UnityHierarchyFolders.Runtime
             {
                 foreach (var c in destroyable)
                 {
-                    if (c.CanDestroy())
-                    {
                     DestroyImmediate(c);
                 }
             }
-        }
         }
 
         private void OnGUI()
