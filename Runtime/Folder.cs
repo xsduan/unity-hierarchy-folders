@@ -20,24 +20,18 @@ namespace UnityHierarchyFolders.Runtime
     /// </summary>
     static class CanDestroyExtension
     {
-        private static bool Requires(Type obj, Type req)
-        {
-            return Attribute.IsDefined(obj, typeof(RequireComponent)) &&
-                   Attribute.GetCustomAttributes(obj, typeof(RequireComponent))
-                    .OfType<RequireComponent>()
-                    // RequireComponent has up to 3 required types per requireComponent, because of course.
-                    .SelectMany(rc => new Type[] { rc.m_Type0, rc.m_Type1, rc.m_Type2 })
-                    .Any(t => t != null && t.IsAssignableFrom(req));
-        }
+        private static bool Requires(Type obj, Type req) => Attribute.IsDefined(obj, typeof(RequireComponent)) &&
+            Attribute.GetCustomAttributes(obj, typeof(RequireComponent))
+                .OfType<RequireComponent>()
+                // RequireComponent has up to 3 required types per requireComponent, because of course.
+                .SelectMany(rc => new Type[] { rc.m_Type0, rc.m_Type1, rc.m_Type2 })
+                .Any(t => t != null && t.IsAssignableFrom(req));
 
         /// <summary>Checks whether the stated component can be destroyed without violating dependencies.</summary>
         /// <returns>Is component destroyable?</returns>
         /// <param name="t">Component candidate for destruction.</param>
-        internal static bool CanDestroy(this Component t)
-        {
-            return !t.gameObject.GetComponents<Component>()
-                .Any(c => Requires(c.GetType(), t.GetType()));
-        }
+        internal static bool CanDestroy(this Component t) => !t.gameObject.GetComponents<Component>()
+            .Any(c => Requires(c.GetType(), t.GetType()));
     }
 #endif
 
@@ -85,15 +79,12 @@ namespace UnityHierarchyFolders.Runtime
             }
         }
 
-        private bool AskDelete()
-        {
-            return EditorUtility.DisplayDialog(
-                title: "Can't add script",
-                message: "Folders shouldn't be used with other components. Which component should be kept?",
-                ok: "Folder",
-                cancel: "Component"
-            );
-        }
+        private bool AskDelete() => EditorUtility.DisplayDialog(
+            title: "Can't add script",
+            message: "Folders shouldn't be used with other components. Which component should be kept?",
+            ok: "Folder",
+            cancel: "Component"
+        );
 
         /// <summary>Delete all components regardless of dependency hierarchy.</summary>
         /// <param name="comps">Which components to delete.</param>
@@ -169,10 +160,11 @@ namespace UnityHierarchyFolders.Runtime
             {
                 if (child.parent == this.transform)
                 {
-                    child.name = this.name + '/' + child.name;
+                    child.name = $"{this.name}/{child.name}";
                     child.parent = this.transform.parent;
                 }
             }
+
             if (Application.isPlaying)
             {
                 Destroy(this.gameObject);
