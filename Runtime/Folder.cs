@@ -111,7 +111,8 @@ namespace UnityHierarchyFolders.Runtime
             }
         }
 
-        private void OnGUI()
+        /// <summary>Ensure that the folder is the only component.</summary>
+        private void EnsureExclusiveComponent()
         {
             // we are running, don't bother the player.
             // also, sometimes `this` might be null for whatever reason.
@@ -154,6 +155,10 @@ namespace UnityHierarchyFolders.Runtime
             this.transform.position = Vector3.zero;
             this.transform.rotation = Quaternion.identity;
             this.transform.localScale = new Vector3(1, 1, 1);
+
+#if UNITY_EDITOR
+            this.EnsureExclusiveComponent();
+#endif
         }
 
         /// <summary>Takes direct children and links them to the parent transform or global.</summary>
