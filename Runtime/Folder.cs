@@ -24,8 +24,10 @@ namespace UnityHierarchyFolders.Runtime
         {
             return Attribute.IsDefined(obj, typeof(RequireComponent)) &&
                    Attribute.GetCustomAttributes(obj, typeof(RequireComponent))
-                       .OfType<RequireComponent>()
-                       .Any(rc => rc.m_Type0.IsAssignableFrom(req));
+                    .OfType<RequireComponent>()
+                    // RequireComponent has up to 3 required types per requireComponent, because of course.
+                    .SelectMany(rc => new Type[] { rc.m_Type0, rc.m_Type1, rc.m_Type2 })
+                    .Any(t => t != null && t.IsAssignableFrom(req));
         }
 
         /// <summary>Checks whether the stated component can be destroyed without violating dependencies.</summary>
