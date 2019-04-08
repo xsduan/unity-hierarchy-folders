@@ -9,7 +9,15 @@ using UnityEngine;
 namespace UnityHierarchyFolders.Runtime
 {
 #if UNITY_EDITOR
-// taken from: https://gamedev.stackexchange.com/a/140799
+    /// <summary>
+    /// <para>Extension to Components to check if there are no dependencies to itself.</para>
+    /// <para>
+    ///     taken from:
+    ///     <see cref="!:https://gamedev.stackexchange.com/a/140799">
+    ///         StackOverflow: Check if a game object's component can be destroyed
+    ///     </see>
+    /// </para>
+    /// </summary>
     static class CanDestroyExtension
     {
         private static bool Requires(Type obj, Type req)
