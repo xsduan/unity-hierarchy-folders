@@ -1,28 +1,19 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityHierarchyFolders.Runtime;
 
 namespace Plugins.UnityHierarchyFolders
 {
-    [InitializeOnLoad]
+    [InitializeOnLoad] 
     public class HierarchyFolderIcon
     {
-        private static readonly Texture Texture;
-        private static readonly Texture OpenTexture;
-        private static readonly Texture2D BackTexture;
+        private static Texture _texture;
+        private static Texture _openTexture;
+        private static Texture2D _backTexture;
         private static List<int> _markedObjects;
         static HierarchyFolderIcon()
         {
-            Texture = EditorGUIUtility.IconContent("Folder Icon").image;
-            OpenTexture = EditorGUIUtility.IconContent("FolderEmpty Icon").image;
-            
-            BackTexture = new Texture2D(1,1);
-            BackTexture.SetPixel(0,0, EditorGUIUtility.isProSkin
-                ? new Color32(56, 56, 56, 255)
-                : new Color32(194, 194, 194, 255));
-            BackTexture.Apply();
-            
             EditorApplication.update += UpdateCb;
             EditorApplication.hierarchyWindowItemOnGUI += HierarchyItemCb;
         }
@@ -31,6 +22,8 @@ namespace Plugins.UnityHierarchyFolders
         {
             var go = Object.FindObjectsOfType(typeof(GameObject)) as GameObject[];
             _markedObjects = new List<int>();
+            if (go == null)
+                return;
             foreach (var g in go)
             {
                 if (g.GetComponent<Folder>() != null)
@@ -47,19 +40,28 @@ namespace Plugins.UnityHierarchyFolders
             var g = EditorUtility.InstanceIDToObject(instanceId) as GameObject;
             if (!g)
                 return;
-            if (!BackTexture || !OpenTexture || !Texture)
-                return;
+            if (!_backTexture || !_openTexture || !_texture)
+            {
+                _texture = EditorGUIUtility.IconContent("Folder Icon").image;
+                _openTexture = EditorGUIUtility.IconContent("FolderEmpty Icon").image;
+            
+                _backTexture = new Texture2D(1,1);
+                _backTexture.SetPixel(0,0, EditorGUIUtility.isProSkin
+                    ? new Color32(56, 56, 56, 255)
+                    : new Color32(194, 194, 194, 255));
+                _backTexture.Apply();
+            }
             
             GUI.DrawTexture(new Rect(selectionRect)
             {
                 y = selectionRect.y + 1,
                 width = 15,
                 height = 15
-            }, BackTexture);
+            }, _backTexture);
             GUI.DrawTexture(new Rect(selectionRect)
             {
                 width = selectionRect.height,
-            },g.transform.childCount == 0? OpenTexture : Texture);
+            },g.transform.childCount == 0? _openTexture : _texture);
         }
     }
 }
