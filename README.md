@@ -39,6 +39,20 @@ buggy, you're not going crazy!
 
 [1]: https://forum.unity.com/threads/git-support-on-package-manager.573673/#post-3819487
 
+### OpenUPM
+
+Please note that this is a third party service, which means that Unity
+Technologies will not provide support. Always be mindful when considering
+unofficial plugins and tools.
+
+```
+$ openupm add com.xsduan.hierarchy-folders
+```
+
+To install OpenUPM, please see the [documentation][2].
+
+[2]: https://openupm.com/docs/
+
 ## Possible FAQs
 
 ### Why folders in the first place?
@@ -66,11 +80,10 @@ So there are. This isn't exactly a unique concept and I only made it for future
 personal use and shared it only to possibly to help other people because I
 couldn't find it on Google.
 
-In fact, there's probably like 50 versions of this floating around that I can't
-google-fu my way through. I personally have seen one on the Asset Store myself,
-but it was $0.99/seat and as you can tell it took me maybe 3 hours to set up
-their entire product plus auto pruning so it's clearly not worth paying jack
-for.
-
 If you are the owner of one such product, please contact me and we can work
 something out.
+
+The hope is to have it be a native component like it is in Unreal. (Not
+necessarily this one specifically, but I'm not opposed to it ;) I've seen paid
+components for this and frankly for the effort it took me it's a bit of a
+rip-off to pay any amount for it.
