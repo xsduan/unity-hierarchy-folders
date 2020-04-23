@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEditor;
 #endif
@@ -36,13 +37,13 @@ namespace UnityHierarchyFolders.Runtime
 #endif
 
     [DisallowMultipleComponent]
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     public class Folder : MonoBehaviour
     {
 #if UNITY_EDITOR
         private static bool addedSelectionResetCallback;
 
-        Folder()
+        private Folder()
         {
             // add reset callback first in queue
             if (!addedSelectionResetCallback)
@@ -56,6 +57,19 @@ namespace UnityHierarchyFolders.Runtime
 
         private static Tool lastTool;
         private static Folder toolLock;
+        
+        public static HashSet<int> folders = new HashSet<int>();
+        //public static ReadOnlyCollection<int> folders => new ReadOnlyCollection<int>(_folders.ToList());
+
+        private void Start()
+        {
+            folders.Add(gameObject.GetInstanceID());
+        }
+
+        private void OnDestroy()
+        {
+            folders.Remove(gameObject.GetInstanceID());
+        }
 
         /// <summary>Hides all gizmos if selected to avoid accidental editing of the transform.</summary>
         private void HandleSelection()
@@ -148,6 +162,11 @@ namespace UnityHierarchyFolders.Runtime
             this.transform.localScale = new Vector3(1, 1, 1);
 
 #if UNITY_EDITOR
+            if (!Application.IsPlaying(gameObject))
+            {
+                folders.Add(gameObject.GetInstanceID());
+            }
+            
             this.EnsureExclusiveComponent();
 #endif
         }
@@ -158,10 +177,12 @@ namespace UnityHierarchyFolders.Runtime
             // gather first-level children
             foreach (Transform child in this.transform.GetComponentsInChildren<Transform>(includeInactive: true))
             {
+                var index = transform.GetSiblingIndex();
                 if (child.parent == this.transform)
                 {
                     child.name = $"{this.name}/{child.name}";
                     child.parent = this.transform.parent;
+                    child.SetSiblingIndex(++index);
                 }
             }
 
