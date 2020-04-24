@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEditor;
 #endif
@@ -42,6 +41,7 @@ namespace UnityHierarchyFolders.Runtime
     {
 #if UNITY_EDITOR
         private static bool addedSelectionResetCallback;
+        public static Dictionary<int, int> folders = new Dictionary<int, int>();
 
         private Folder()
         {
@@ -57,18 +57,55 @@ namespace UnityHierarchyFolders.Runtime
 
         private static Tool lastTool;
         private static Folder toolLock;
-        
-        public static HashSet<int> folders = new HashSet<int>();
-        //public static ReadOnlyCollection<int> folders => new ReadOnlyCollection<int>(_folders.ToList());
 
+        [SerializeField]
+        private int _colorIndex;
+
+        public int colorIndex => _colorIndex;
+        
         private void Start()
         {
-            folders.Add(gameObject.GetInstanceID());
+            var instanceId = gameObject.GetInstanceID();
+            if (folders.ContainsKey(instanceId))
+            {
+                folders[instanceId] = _colorIndex;
+            }
+            else
+            {
+                folders.Add(instanceId, _colorIndex);
+            }
         }
 
         private void OnDestroy()
         {
-            folders.Remove(gameObject.GetInstanceID());
+            RemoveFolderData();
+        }
+
+        private void OnValidate()
+        {
+            AddOrUpdateFolderData();
+        }
+
+        private void RemoveFolderData()
+        {
+            var instanceId = gameObject.GetInstanceID();
+            if (folders.ContainsKey(instanceId))
+            {
+                folders.Remove(gameObject.GetInstanceID());
+            }
+        }
+
+        private void AddOrUpdateFolderData()
+        {
+            var instanceId = gameObject.GetInstanceID();
+            if (folders.ContainsKey(instanceId))
+            {
+                folders[instanceId] = _colorIndex;
+            }
+            else
+            {
+                folders.Add(instanceId, _colorIndex);
+            }
         }
 
         /// <summary>Hides all gizmos if selected to avoid accidental editing of the transform.</summary>
@@ -164,7 +201,7 @@ namespace UnityHierarchyFolders.Runtime
 #if UNITY_EDITOR
             if (!Application.IsPlaying(gameObject))
             {
-                folders.Add(gameObject.GetInstanceID());
+                AddOrUpdateFolderData();
             }
             
             this.EnsureExclusiveComponent();
