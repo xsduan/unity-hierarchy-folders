@@ -27,7 +27,7 @@ namespace UnityHierarchyFolders.Editor
         private static Texture2D _closedFolderSelectedTexture;
         
         private static bool _isInitialized;
-        private static bool _hasProcessedFrame; 
+        private static bool _hasProcessedFrame = true; 
         
         // Reflected members
         private static PropertyInfo _sceneHierarchyProperty;
