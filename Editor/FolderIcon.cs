@@ -42,28 +42,40 @@ namespace UnityHierarchyFolders.Editor
 
         private static (Texture2D, Texture2D)[] _coloredFolderIcons; 
         public static (Texture2D, Texture2D)[] coloredFolderIcons => _coloredFolderIcons;
-        public const int IconHueCount = 10;
-        public const int IconValueCount = 3;
+        
+        public static int IconHueCount => IconColors.GetLength(0);
+        public static int IconValueCount => IconColors.GetLength(1);
 
+        public static readonly Color[,] IconColors = {
+            {new Color(0.09f, 0.57f, 0.82f), new Color(0.05f, 0.34f, 0.48f),},
+            {new Color(0.09f, 0.67f, 0.67f), new Color(0.05f, 0.42f, 0.42f),},
+            {new Color(0.23f, 0.73f, 0.36f), new Color(0.15f, 0.41f, 0.22f),},
+            {new Color(0.55f, 0.35f, 0.71f), new Color(0.35f, 0.24f, 0.44f),},
+            {new Color(0.78f, 0.27f, 0.55f), new Color(0.52f, 0.15f, 0.35f),},
+            {new Color(0.80f, 0.66f, 0.10f), new Color(0.56f, 0.46f, 0.02f),},
+            {new Color(0.91f, 0.49f, 0.13f), new Color(0.62f, 0.33f, 0.07f),},
+            {new Color(0.91f, 0.30f, 0.24f), new Color(0.77f, 0.15f, 0.09f),},
+            {new Color(0.35f, 0.49f, 0.63f), new Color(0.24f, 0.33f, 0.42f),},
+        };
+        
         [InitializeOnLoadMethod] 
         static void Startup()
         { 
-            Initialize();
             EditorApplication.update += PrepareFrame;
             EditorApplication.hierarchyWindowItemOnGUI += RefreshFolderIcons;
         }
 
-        private static Texture2D GetTintedTexture(Texture2D original, Color tint)
+        private static Texture2D GetTintedTexture(Texture2D original, Color tint, string name = "")
         {
             Color32 TintColor(Color32 c)
             {
                 return c * tint;
             }
 
-            return GetColorizedTexture(original, TintColor);
+            return GetColorizedTexture(original, TintColor, name);
         }
         
-        private static Texture2D GetWhiteTexture(Texture2D original)
+        private static Texture2D GetWhiteTexture(Texture2D original, string name = "")
         {
             Color32 MakeColorsWhite(Color32 c)
             {
@@ -76,15 +88,18 @@ namespace UnityHierarchyFolders.Editor
                 return  c;
             }
 
-            return GetColorizedTexture(original, MakeColorsWhite);
+            return GetColorizedTexture(original, MakeColorsWhite, name);
         }
 
-        private static Texture2D GetColorizedTexture(Texture2D original, Func<Color32, Color32> colorManipulator)
+        private static Texture2D GetColorizedTexture(Texture2D original, Func<Color32, Color32> colorManipulator, string name = "")
         {
             var tinted = new Texture2D(original.width, original.height, 
-            original.graphicsFormat, original.mipmapCount, TextureCreationFlags.MipChain);
+                original.graphicsFormat, original.mipmapCount, TextureCreationFlags.MipChain);
+
+            tinted.name = name;
             
-            Graphics.CopyTexture(original, tinted); 
+            Graphics.CopyTexture(original, tinted);
+            
             var data = tinted.GetRawTextureData<Color32>();
             for (int index = 0, len = data.Length; index < len; index++)
             {
@@ -104,22 +119,20 @@ namespace UnityHierarchyFolders.Editor
             return tinted;
         }
         
-        private static void Initialize()
+        private static void InitIfNeeded()
         {
             if (_isInitialized)
             {
                 return;
             }
-
             
-            
-            _closedFolderTexture = (Texture2D) EditorGUIUtility.IconContent("Folder Icon").image;
             _openFolderTexture = (Texture2D) EditorGUIUtility.IconContent("FolderEmpty Icon").image;
+            _closedFolderTexture = (Texture2D) EditorGUIUtility.IconContent("Folder Icon").image;
             
             _coloredFolderIcons = new (Texture2D, Texture2D)[] {(_openFolderTexture, _closedFolderTexture)};
  
-            _openFolderSelectedTexture = GetWhiteTexture(_openFolderTexture);
-            _closedFolderSelectedTexture = GetWhiteTexture(_closedFolderTexture);
+            _openFolderSelectedTexture = GetWhiteTexture(_openFolderTexture, "FolderEmpty Icon Selected");
+            _closedFolderSelectedTexture = GetWhiteTexture(_closedFolderTexture, "Folder Icon Selected");
 
             float Map(int index, int steps, float outFrom = 0, float outTo = 1)
             {
@@ -130,18 +143,20 @@ namespace UnityHierarchyFolders.Editor
             {
                 for (int hueIndex = 0; hueIndex < IconHueCount; hueIndex++)
                 {
-                    float hue = Map(hueIndex, IconHueCount);
-                    float value = Map(valueIndex, IconValueCount, .77f, .3f);
-                    float saturation = Map(valueIndex, IconValueCount, 1f, .6f);
-                    var color = Color.HSVToRGB(hue, saturation, value);
+                    int index = valueIndex * IconHueCount + hueIndex + 1;
+//                    float hue = Map(hueIndex, IconHueCount);
+//                    float value = Map(valueIndex, IconValueCount, .77f, .3f);
+//                    float saturation = Map(valueIndex, IconValueCount, 1f, .6f);
+//                    var color = Color.HSVToRGB(hue, saturation, value);
 
-                    var openFolderIcon = GetTintedTexture(_openFolderSelectedTexture, color);
-                    var closedFolderIcon = GetTintedTexture(_closedFolderSelectedTexture, color);
+                    var color = IconColors[hueIndex, valueIndex];
+                    
+                    var openFolderIcon = GetTintedTexture(_openFolderSelectedTexture, color, "FolderEmpty Icon " + index);
+                    var closedFolderIcon = GetTintedTexture(_closedFolderSelectedTexture, color, "Folder Icon " + index);
                     
                     ArrayUtility.Add(ref _coloredFolderIcons, (openFolderIcon, closedFolderIcon));
                 }
             }
-            
             
             const BindingFlags BindingAll = BindingFlags.Public 
               | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
@@ -172,7 +187,7 @@ namespace UnityHierarchyFolders.Editor
 
         private static void PrepareFrame()
         {
-            Initialize();
+            InitIfNeeded();
             
             _hasProcessedFrame = false;
         }
