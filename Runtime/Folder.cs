@@ -6,8 +6,7 @@ using UnityEditor;
 #endif
 using UnityEngine;
 
-namespace UnityHierarchyFolders.Runtime
-{
+namespace UnityHierarchyFolders.Runtime {
 #if UNITY_EDITOR
     /// <summary>
     /// <para>Extension to Components to check if there are no dependencies to itself.</para>
@@ -41,7 +40,6 @@ namespace UnityHierarchyFolders.Runtime
     {
 #if UNITY_EDITOR
         private static bool addedSelectionResetCallback;
-        public static Dictionary<int, int> folders = new Dictionary<int, int>();
 
         private Folder()
         {
@@ -63,29 +61,34 @@ namespace UnityHierarchyFolders.Runtime
 
         public int colorIndex => _colorIndex;
         
-        private void Start()
+        /// <summary>
+        /// The set of folder objects.
+        /// </summary>
+        public static Dictionary<int, int> folders = new Dictionary<int, int>();
+
+        /// <summary>
+        /// Gets the icon index associated with the specified object.
+        /// </summary>
+        /// <param name="obj">Test object.</param>
+        /// <param name="index">The icon index.</param>
+        /// <returns>True if the specified object is a folder with a registered icon index.</returns>
+        public static bool TryGetIconIndex(UnityEngine.Object obj, out int index)
         {
-            var instanceId = gameObject.GetInstanceID();
-            if (folders.ContainsKey(instanceId))
-            {
-                folders[instanceId] = _colorIndex;
-            }
-            else
-            {
-                folders.Add(instanceId, _colorIndex);
-            }
+            index = -1;
+            return obj && folders.TryGetValue(obj.GetInstanceID(), out index);
         }
 
-        private void OnDestroy()
-        {
-            RemoveFolderData();
-        }
-
-        private void OnValidate()
-        {
-            AddOrUpdateFolderData();
-        }
-
+        /// <summary>
+        /// Test if a Unity object is a folder by way of containing a Folder component.
+        /// </summary>
+        /// <param name="obj">Test object.</param>
+        /// <returns>Is this object a folder?</returns>
+        public static bool IsFolder(UnityEngine.Object obj) => folders.ContainsKey(obj.GetInstanceID());
+ 
+        private void Start() => AddOrUpdateFolderData();
+        private void OnValidate() =>  AddOrUpdateFolderData();
+        private void OnDestroy() => RemoveFolderData();
+        
         private void RemoveFolderData()
         {
             var instanceId = gameObject.GetInstanceID();
@@ -112,10 +115,7 @@ namespace UnityHierarchyFolders.Runtime
         private void HandleSelection()
         {
             // ignore if another folder object is already hiding gizmo
-            if (toolLock != null && toolLock != this)
-            {
-                return;
-            }
+            if (toolLock != null && toolLock != this) { return; }
 
             if (this != null && Selection.Contains(this.gameObject))
             {
@@ -167,10 +167,7 @@ namespace UnityHierarchyFolders.Runtime
                 .Where(c => c != this && !typeof(Transform).IsAssignableFrom(c.GetType()));
 
             // no items means no actions anyways
-            if (!existingComponents.Any())
-            {
-                return;
-            }
+            if (!existingComponents.Any()) {  return; }
 
             if (this.AskDelete())
             {
@@ -182,11 +179,10 @@ namespace UnityHierarchyFolders.Runtime
             }
         }
 
-        private void OnEnable()
-        {
-            // Hide inspector to prevent accidental editing of transform.
-            this.transform.hideFlags = HideFlags.HideInInspector;
-        }
+        /// <summary>
+        /// Hide inspector to prevent accidental editing of transform.
+        /// </summary>
+        private void OnEnable() => this.transform.hideFlags = HideFlags.HideInInspector;
 #endif
 
         /// <summary>
