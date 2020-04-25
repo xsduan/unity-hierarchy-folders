@@ -9,24 +9,24 @@ namespace UnityHierarchyFolders.Editor
 {
     public static class FolderEditorUtils
     {
-        const string actionName = "Create Heirarchy Folder %#&N";
+        private const string _actionName = "Create Heirarchy Folder %#&N";
 
         /// <summary>Add new folder "prefab".</summary>
         /// <param name="command">Menu command information.</param>
-        [MenuItem("GameObject/" + actionName, isValidateFunction: false, priority: 0)]
+        [MenuItem("GameObject/" + _actionName, isValidateFunction: false, priority: 0)]
         public static void AddFolderPrefab(MenuCommand command)
         {
             var obj = new GameObject { name = "Folder" };
             obj.AddComponent<Folder>();
 
             GameObjectUtility.SetParentAndAlign(obj, (GameObject)command.context);
-            Undo.RegisterCreatedObjectUndo(obj, actionName);
+            Undo.RegisterCreatedObjectUndo(obj, _actionName);
         }
     }
 
     public class FolderOnBuild : IProcessSceneWithReport
     {
-        public int callbackOrder { get => 0; }
+        public int callbackOrder => 0;
 
         public void OnProcessScene(Scene scene, BuildReport report)
         {

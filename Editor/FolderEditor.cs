@@ -2,7 +2,8 @@
 using UnityEngine;
 using UnityHierarchyFolders.Runtime;
 
-namespace UnityHierarchyFolders.Editor {
+namespace UnityHierarchyFolders.Editor
+{
     [CustomEditor(typeof(Folder))]
     public class FolderEditor : UnityEditor.Editor
     {
@@ -11,18 +12,18 @@ namespace UnityHierarchyFolders.Editor {
         public override bool RequiresConstantRepaint() => true;
         public override void OnInspectorGUI()
         {
-            _expanded = EditorGUILayout.Foldout(_expanded, "Icon Color");
-            if (_expanded) { RenderColorPicker(); }
+            this._expanded = EditorGUILayout.Foldout(this._expanded, "Icon Color");
+            if (this._expanded) { this.RenderColorPicker(); }
         }
 
         private void RenderColorPicker()
         {
-            SerializedProperty colorIndexProperty = serializedObject.FindProperty("_colorIndex");
+            var colorIndexProperty = this.serializedObject.FindProperty("_colorIndex");
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
 
-            var buttonSize = 25f;
+            float buttonSize = 25f;
 
             var gridRect = EditorGUILayout.GetControlRect(false, buttonSize * HierarchyFolderIcon.IconRowCount,
                 GUILayout.Width(buttonSize * HierarchyFolderIcon.IconColumnCount));
@@ -36,7 +37,7 @@ namespace UnityHierarchyFolders.Editor {
                     float width = gridRect.width / HierarchyFolderIcon.IconColumnCount;
                     float height = gridRect.height / HierarchyFolderIcon.IconRowCount;
                     var rect = new Rect(gridRect.x + width * column, gridRect.y + height * row, width, height);
-                    var (openIcon, closeIcon) = HierarchyFolderIcon.ColoredFolderIcons(index);
+                    (var openIcon, var closeIcon) = HierarchyFolderIcon.ColoredFolderIcons(index);
 
                     if (Event.current.type == EventType.Repaint)
                     {
@@ -56,9 +57,9 @@ namespace UnityHierarchyFolders.Editor {
 
                     if (GUI.Button(rect, currentIndex == index ? openIcon : closeIcon, EditorStyles.label))
                     {
-                        Undo.RecordObject(target, "Set Folder Color");
+                        Undo.RecordObject(this.target, "Set Folder Color");
                         colorIndexProperty.intValue = currentIndex == index ? 0 : index;
-                        serializedObject.ApplyModifiedProperties();
+                        this.serializedObject.ApplyModifiedProperties();
                         EditorApplication.RepaintHierarchyWindow();
                         GUIUtility.ExitGUI();
                     }

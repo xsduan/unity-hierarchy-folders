@@ -6,7 +6,8 @@ using UnityEditor;
 #endif
 using UnityEngine;
 
-namespace UnityHierarchyFolders.Runtime {
+namespace UnityHierarchyFolders.Runtime
+{
 #if UNITY_EDITOR
     /// <summary>
     /// <para>Extension to Components to check if there are no dependencies to itself.</para>
@@ -17,7 +18,7 @@ namespace UnityHierarchyFolders.Runtime {
     ///     </see>
     /// </para>
     /// </summary>
-    static class CanDestroyExtension
+    internal static class CanDestroyExtension
     {
         private static bool Requires(Type obj, Type req) => Attribute.IsDefined(obj, typeof(RequireComponent)) &&
             Attribute.GetCustomAttributes(obj, typeof(RequireComponent))
@@ -39,27 +40,27 @@ namespace UnityHierarchyFolders.Runtime {
     public class Folder : MonoBehaviour
     {
 #if UNITY_EDITOR
-        private static bool addedSelectionResetCallback;
+        private static bool _addedSelectionResetCallback;
 
         private Folder()
         {
             // add reset callback first in queue
-            if (!addedSelectionResetCallback)
+            if (!_addedSelectionResetCallback)
             {
                 Selection.selectionChanged += () => Tools.hidden = false;
-                addedSelectionResetCallback = true;
+                _addedSelectionResetCallback = true;
             }
 
             Selection.selectionChanged += this.HandleSelection;
         }
 
-        private static Tool lastTool;
-        private static Folder toolLock;
+        private static Tool _lastTool;
+        private static Folder _toolLock;
 
         [SerializeField]
         private int _colorIndex = 0;
-        public int ColorIndex => _colorIndex;
-        
+        public int ColorIndex => this._colorIndex;
+
         /// <summary>
         /// The set of folder objects.
         /// </summary>
@@ -83,30 +84,30 @@ namespace UnityHierarchyFolders.Runtime {
         /// <param name="obj">Test object.</param>
         /// <returns>Is this object a folder?</returns>
         public static bool IsFolder(UnityEngine.Object obj) => folders.ContainsKey(obj.GetInstanceID());
- 
-        private void Start() => AddFolderData();
-        private void OnValidate() =>  AddFolderData();
-        private void OnDestroy() => RemoveFolderData();
-        
-        private void AddFolderData() => folders[gameObject.GetInstanceID()] = _colorIndex;
-        private void RemoveFolderData() => folders.Remove(gameObject.GetInstanceID());
+
+        private void Start() => this.AddFolderData();
+        private void OnValidate() => this.AddFolderData();
+        private void OnDestroy() => this.RemoveFolderData();
+
+        private void AddFolderData() => folders[this.gameObject.GetInstanceID()] = this._colorIndex;
+        private void RemoveFolderData() => folders.Remove(this.gameObject.GetInstanceID());
 
         /// <summary>Hides all gizmos if selected to avoid accidental editing of the transform.</summary>
         private void HandleSelection()
         {
             // ignore if another folder object is already hiding gizmo
-            if (toolLock != null && toolLock != this) { return; }
+            if (_toolLock != null && _toolLock != this) { return; }
 
             if (this != null && Selection.Contains(this.gameObject))
             {
-                lastTool = Tools.current;
-                toolLock = this;
+                _lastTool = Tools.current;
+                _toolLock = this;
                 Tools.current = Tool.None;
             }
-            else if (toolLock != null)
+            else if (_toolLock != null)
             {
-                Tools.current = lastTool;
-                toolLock = null;
+                Tools.current = _lastTool;
+                _toolLock = null;
             }
         }
 
@@ -144,7 +145,7 @@ namespace UnityHierarchyFolders.Runtime {
                 .Where(c => c != this && !typeof(Transform).IsAssignableFrom(c.GetType()));
 
             // no items means no actions anyways
-            if (!existingComponents.Any()) {  return; }
+            if (!existingComponents.Any()) { return; }
 
             if (this.AskDelete())
             {
@@ -172,11 +173,11 @@ namespace UnityHierarchyFolders.Runtime {
             this.transform.localScale = new Vector3(1, 1, 1);
 
 #if UNITY_EDITOR
-            if (!Application.IsPlaying(gameObject))
+            if (!Application.IsPlaying(this.gameObject))
             {
-                AddFolderData();
+                this.AddFolderData();
             }
-            
+
             this.EnsureExclusiveComponent();
 #endif
         }
@@ -185,8 +186,8 @@ namespace UnityHierarchyFolders.Runtime {
         public void Flatten()
         {
             // gather first-level children
-            var index = transform.GetSiblingIndex(); // keep components in logical order
-            foreach (Transform child in this.transform.GetComponentsInChildren<Transform>(includeInactive: true))
+            int index = this.transform.GetSiblingIndex(); // keep components in logical order
+            foreach (var child in this.transform.GetComponentsInChildren<Transform>(includeInactive: true))
             {
                 if (child.parent == this.transform)
                 {
