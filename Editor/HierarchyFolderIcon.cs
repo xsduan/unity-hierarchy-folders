@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -15,6 +14,13 @@ namespace UnityHierarchyFolders.Editor
 {
     public class HierarchyFolderIcon
     {
+#if UNITY_2020_1_OR_NEWER
+        private const string OpenedFolderPrefix = "FolderOpened";
+#else
+        private const string OpenedFolderPrefix = "OpenedFolder";
+#endif
+        private const string ClosedFolderPrefix = "Folder";
+        
         private static Texture2D openFolderTexture;
         private static Texture2D closedFolderTexture;
         private static Texture2D openFolderSelectedTexture;
@@ -106,6 +112,8 @@ namespace UnityHierarchyFolders.Editor
                 mipmapSize >>= 2;
                 offset += mipmapSize;
             }
+            
+            tinted.hideFlags = HideFlags.DontSave;
             tinted.Apply();
             
             return tinted;
@@ -115,14 +123,18 @@ namespace UnityHierarchyFolders.Editor
         {
             if (isInitialized) { return; }
             
-            openFolderTexture = (Texture2D) EditorGUIUtility.IconContent("FolderEmpty Icon").image;
-            closedFolderTexture = (Texture2D) EditorGUIUtility.IconContent("Folder Icon").image;
+            openFolderTexture = (Texture2D) EditorGUIUtility.IconContent($"{OpenedFolderPrefix} Icon").image;
+            closedFolderTexture = (Texture2D) EditorGUIUtility.IconContent($"{ClosedFolderPrefix} Icon").image;
+            
+            // We could use the actual white folder icons but I prefer the look of the tinted folder icon
+            // so I'm leaving this as a documented alternative.
+            //openFolderSelectedTexture = (Texture2D) EditorGUIUtility.IconContent($"{OpenedFolderPrefix} On Icon").image;
+            //closedFolderSelectedTexture = (Texture2D) EditorGUIUtility.IconContent($"{ClosedFolderPrefix} On Icon").image;
+            openFolderSelectedTexture = GetWhiteTexture(openFolderTexture, $"{OpenedFolderPrefix} Icon White");
+            closedFolderSelectedTexture = GetWhiteTexture(closedFolderTexture, $"{ClosedFolderPrefix} Icon White");
             
             _coloredFolderIcons = new (Texture2D, Texture2D)[] {(openFolderTexture, closedFolderTexture)};
- 
-            openFolderSelectedTexture = GetWhiteTexture(openFolderTexture, "FolderEmpty Icon Selected");
-            closedFolderSelectedTexture = GetWhiteTexture(closedFolderTexture, "Folder Icon Selected");
-
+            
             for (int row = 0; row < IconRowCount; row++)
             {
                 for (int column = 0; column < IconColumnCount; column++)
@@ -130,8 +142,10 @@ namespace UnityHierarchyFolders.Editor
                     int index = 1 + column + row * IconColumnCount;
                     var color = IconColors[column, row];
                     
-                    var openFolderIcon = GetTintedTexture(openFolderSelectedTexture, color, "FolderEmpty Icon " + index);
-                    var closedFolderIcon = GetTintedTexture(closedFolderSelectedTexture, color, "Folder Icon " + index);
+                    var openFolderIcon = GetTintedTexture(openFolderSelectedTexture, 
+                        color, $"{openFolderSelectedTexture.name} {index}");
+                    var closedFolderIcon = GetTintedTexture(closedFolderSelectedTexture, 
+                        color, $"{closedFolderSelectedTexture.name} {index}");
                     
                     ArrayUtility.Add(ref _coloredFolderIcons, (openFolderIcon, closedFolderIcon));
                 }

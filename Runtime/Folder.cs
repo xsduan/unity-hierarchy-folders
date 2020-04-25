@@ -57,7 +57,7 @@ namespace UnityHierarchyFolders.Runtime {
         private static Folder toolLock;
 
         [SerializeField]
-        private int _colorIndex;
+        private int _colorIndex = 0;
 
         public int colorIndex => _colorIndex;
         
