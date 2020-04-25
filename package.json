@@ -1,13 +1,13 @@
 {
   "name": "com.xsduan.hierarchy-folders",
   "displayName": "Heirarchy Folders",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "unity": "2018.1",
   "description": "Self-deleting Folder objects for the heirarchy.",
   "keywords": [
-      "folder",
-      "organization",
-      "unity"
+    "folder",
+    "organization",
+    "unity"
   ],
   "author": {
     "name": "Shane Duan"
