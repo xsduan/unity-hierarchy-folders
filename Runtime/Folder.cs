@@ -58,8 +58,7 @@ namespace UnityHierarchyFolders.Runtime {
 
         [SerializeField]
         private int _colorIndex = 0;
-
-        public int colorIndex => _colorIndex;
+        public int ColorIndex => _colorIndex;
         
         /// <summary>
         /// The set of folder objects.
@@ -85,31 +84,12 @@ namespace UnityHierarchyFolders.Runtime {
         /// <returns>Is this object a folder?</returns>
         public static bool IsFolder(UnityEngine.Object obj) => folders.ContainsKey(obj.GetInstanceID());
  
-        private void Start() => AddOrUpdateFolderData();
-        private void OnValidate() =>  AddOrUpdateFolderData();
+        private void Start() => AddFolderData();
+        private void OnValidate() =>  AddFolderData();
         private void OnDestroy() => RemoveFolderData();
         
-        private void RemoveFolderData()
-        {
-            var instanceId = gameObject.GetInstanceID();
-            if (folders.ContainsKey(instanceId))
-            {
-                folders.Remove(gameObject.GetInstanceID());
-            }
-        }
-
-        private void AddOrUpdateFolderData()
-        {
-            var instanceId = gameObject.GetInstanceID();
-            if (folders.ContainsKey(instanceId))
-            {
-                folders[instanceId] = _colorIndex;
-            }
-            else
-            {
-                folders.Add(instanceId, _colorIndex);
-            }
-        }
+        private void AddFolderData() => folders[gameObject.GetInstanceID()] = _colorIndex;
+        private void RemoveFolderData() => folders.Remove(gameObject.GetInstanceID());
 
         /// <summary>Hides all gizmos if selected to avoid accidental editing of the transform.</summary>
         private void HandleSelection()
@@ -158,10 +138,7 @@ namespace UnityHierarchyFolders.Runtime {
         {
             // we are running, don't bother the player.
             // also, sometimes `this` might be null for whatever reason.
-            if (Application.isPlaying || this == null)
-            {
-                return;
-            }
+            if (Application.isPlaying || this == null) { return; }
 
             var existingComponents = this.GetComponents<Component>()
                 .Where(c => c != this && !typeof(Transform).IsAssignableFrom(c.GetType()));
@@ -197,7 +174,7 @@ namespace UnityHierarchyFolders.Runtime {
 #if UNITY_EDITOR
             if (!Application.IsPlaying(gameObject))
             {
-                AddOrUpdateFolderData();
+                AddFolderData();
             }
             
             this.EnsureExclusiveComponent();
@@ -208,9 +185,9 @@ namespace UnityHierarchyFolders.Runtime {
         public void Flatten()
         {
             // gather first-level children
+            var index = transform.GetSiblingIndex(); // keep components in logical order
             foreach (Transform child in this.transform.GetComponentsInChildren<Transform>(includeInactive: true))
             {
-                var index = transform.GetSiblingIndex();
                 if (child.parent == this.transform)
                 {
                     child.name = $"{this.name}/{child.name}";
