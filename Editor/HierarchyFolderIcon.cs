@@ -40,8 +40,8 @@ namespace UnityHierarchyFolders.Editor
         private static MethodInfo meth_isExpanded;
         private static MethodInfo meth_getAllSceneHierarchyWindows;
 
-        private static (Texture2D, Texture2D)[] _coloredFolderIcons; 
-        public static (Texture2D, Texture2D)[] coloredFolderIcons => _coloredFolderIcons;
+        private static (Texture2D open, Texture2D closed)[] _coloredFolderIcons;
+        public static (Texture2D open, Texture2D closed) ColoredFolderIcons(int i) => _coloredFolderIcons[i];
         
         public static int IconColumnCount => IconColors.GetLength(0);
         public static int IconRowCount => IconColors.GetLength(1);
@@ -202,13 +202,10 @@ namespace UnityHierarchyFolders.Editor
                     var itemObject = (Object) prop_objectPPTR.GetValue(item);
                     if (!Folder.TryGetIconIndex(itemObject, out int colorIndex)) { continue; }
 
-                    
                     var isExpanded = (bool) meth_isExpanded.Invoke(data, new object[] { item });
                     
-                    Texture2D open, closed;
-                    var count = _coloredFolderIcons.Length;
-                    (open, closed) = coloredFolderIcons[Mathf.Clamp(colorIndex, 0, count) % count];
-                    item.icon = isExpanded ? open : closed;
+                    var icons = ColoredFolderIcons(Mathf.Clamp(colorIndex, 0, _coloredFolderIcons.Length - 1));
+                    item.icon = isExpanded ? icons.open : icons.closed;
                     
                     prop_selectedIcon.SetValue(item, isExpanded ? openFolderSelectedTexture : closedFolderSelectedTexture);
                 }

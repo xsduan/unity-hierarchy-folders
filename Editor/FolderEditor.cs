@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEditor.Experimental;
 using UnityEngine;
@@ -41,8 +41,8 @@ namespace UnityHierarchyFolders.Editor
                     int index = 1 + column + row * HierarchyFolderIcon.IconColumnCount;
                     float width = gridRect.width / HierarchyFolderIcon.IconColumnCount;
                     float height = gridRect.height / HierarchyFolderIcon.IconRowCount;
-                    Rect rect = new Rect(gridRect.x + width * column, gridRect.y + height * row, width, height);
-                    var (icon, _) = HierarchyFolderIcon.coloredFolderIcons[index];
+                    var rect = new Rect(gridRect.x + width * column, gridRect.y + height * row, width, height);
+                    var (openIcon, closeIcon) = HierarchyFolderIcon.ColoredFolderIcons(index);
 
                     if (Event.current.type == EventType.Repaint)
                     {
@@ -60,7 +60,7 @@ namespace UnityHierarchyFolders.Editor
                         }
                     }
 
-                    if (GUI.Button(rect, icon, EditorStyles.label))
+                    if (GUI.Button(rect, currentIndex == index ? openIcon : closeIcon, EditorStyles.label))
                     {
                         Undo.RecordObject(target, "Set Folder Color");
                         colorIndexProperty.intValue = currentIndex == index ? 0 : index;
