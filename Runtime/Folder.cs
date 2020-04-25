@@ -55,21 +55,61 @@ namespace UnityHierarchyFolders.Runtime {
 
         private static Tool lastTool;
         private static Folder toolLock;
+
+        [SerializeField]
+        private int _colorIndex = 0;
+
+        public int colorIndex => _colorIndex;
         
         /// <summary>
         /// The set of folder objects.
         /// </summary>
-        private static HashSet<int> folders = new HashSet<int>();
+        public static Dictionary<int, int> folders = new Dictionary<int, int>();
+
+        /// <summary>
+        /// Gets the icon index associated with the specified object.
+        /// </summary>
+        /// <param name="obj">Test object.</param>
+        /// <param name="index">The icon index.</param>
+        /// <returns>True if the specified object is a folder with a registered icon index.</returns>
+        public static bool TryGetIconIndex(UnityEngine.Object obj, out int index)
+        {
+            index = -1;
+            return obj && folders.TryGetValue(obj.GetInstanceID(), out index);
+        }
 
         /// <summary>
         /// Test if a Unity object is a folder by way of containing a Folder component.
         /// </summary>
         /// <param name="obj">Test object.</param>
         /// <returns>Is this object a folder?</returns>
-        public static bool IsFolder(UnityEngine.Object obj) => folders.Contains(obj.GetInstanceID());
+        public static bool IsFolder(UnityEngine.Object obj) => folders.ContainsKey(obj.GetInstanceID());
+ 
+        private void Start() => AddOrUpdateFolderData();
+        private void OnValidate() =>  AddOrUpdateFolderData();
+        private void OnDestroy() => RemoveFolderData();
+        
+        private void RemoveFolderData()
+        {
+            var instanceId = gameObject.GetInstanceID();
+            if (folders.ContainsKey(instanceId))
+            {
+                folders.Remove(gameObject.GetInstanceID());
+            }
+        }
 
-        private void Start() => folders.Add(gameObject.GetInstanceID());
-        private void OnDestroy() => folders.Remove(gameObject.GetInstanceID());
+        private void AddOrUpdateFolderData()
+        {
+            var instanceId = gameObject.GetInstanceID();
+            if (folders.ContainsKey(instanceId))
+            {
+                folders[instanceId] = _colorIndex;
+            }
+            else
+            {
+                folders.Add(instanceId, _colorIndex);
+            }
+        }
 
         /// <summary>Hides all gizmos if selected to avoid accidental editing of the transform.</summary>
         private void HandleSelection()
@@ -157,7 +197,7 @@ namespace UnityHierarchyFolders.Runtime {
 #if UNITY_EDITOR
             if (!Application.IsPlaying(gameObject))
             {
-                folders.Add(gameObject.GetInstanceID());
+                AddOrUpdateFolderData();
             }
             
             this.EnsureExclusiveComponent();
