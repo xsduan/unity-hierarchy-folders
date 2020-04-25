@@ -1,28 +1,22 @@
-using System.Threading.Tasks;
-using UnityEditor;
-using UnityEditor.Experimental;
+﻿using UnityEditor;
 using UnityEngine;
 using UnityHierarchyFolders.Runtime;
 
-namespace UnityHierarchyFolders.Editor
-{
+namespace UnityHierarchyFolders.Editor {
     [CustomEditor(typeof(Folder))]
     public class FolderEditor : UnityEditor.Editor
     {
-        public override bool RequiresConstantRepaint()
-        {
-            return true;
-        }
+        private bool _expanded = false;
 
+        public override bool RequiresConstantRepaint() => true;
         public override void OnInspectorGUI()
         {
-            DoIconColorPicker();
+            _expanded = EditorGUILayout.Foldout(_expanded, "Icon Color");
+            if (_expanded) { RenderColorPicker(); }
         }
 
-        private void DoIconColorPicker()
+        private void RenderColorPicker()
         {
-            GUILayout.Label("Icon Color", EditorStyles.boldLabel);
-
             SerializedProperty colorIndexProperty = serializedObject.FindProperty("_colorIndex");
 
             EditorGUILayout.BeginHorizontal();
