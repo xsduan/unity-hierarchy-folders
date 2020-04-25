@@ -2,54 +2,48 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.Remoting.Messaging;
-using System.Xml;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
-using UnityEditor.SceneManagement;
-using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityHierarchyFolders.Runtime;
 using Object = UnityEngine.Object;
 
-namespace Plugins.UnityHierarchyFolders
-{
+namespace Plugins.UnityHierarchyFolders {
     public class HierarchyFolderIcon
     {
-        private static Texture2D _openFolderTexture;
-        private static Texture2D _closedFolderTexture;
-        private static Texture2D _openFolderSelectedTexture;
-        private static Texture2D _closedFolderSelectedTexture;
+        private static Texture2D openFolderTexture;
+        private static Texture2D closedFolderTexture;
+        private static Texture2D openFolderSelectedTexture;
+        private static Texture2D closedFolderSelectedTexture;
         
-        private static bool _isInitialized;
-        private static bool _hasProcessedFrame; 
+        private static bool isInitialized;
+        private static bool hasProcessedFrame; 
         
         // Reflected members
-        private static PropertyInfo _sceneHierarchyProperty;
-        private static PropertyInfo _treeViewProperty;
-        private static PropertyInfo _dataProperty;
-        private static MethodInfo _getRowsMethod;
-        private static MethodInfo _isExpandedMethod;
-        private static PropertyInfo _selectedIconProperty;
-        private static PropertyInfo _objectPPTRProperty;
-        private static MethodInfo _getAllSceneHierarchyWindowsMethod;
+        private static PropertyInfo prop_sceneHierarchy;
+        private static PropertyInfo prop_treeView;
+        private static PropertyInfo prop_data;
+        private static PropertyInfo prop_selectedIcon;
+        private static PropertyInfo prop_objectPPTR;
 
+        private static MethodInfo meth_getRows;
+        private static MethodInfo meth_isExpanded;
+        private static MethodInfo meth_getAllSceneHierarchyWindows;
 
         [InitializeOnLoadMethod] 
         static void Startup()
         { 
             Initialize();
-            EditorApplication.update += RefreshFolderIcons;
+            EditorApplication.update += ResetFolderIcons;
             EditorApplication.hierarchyWindowItemOnGUI += RefreshFolderIcons;
         }
 
         private static Texture2D GetTintedTexture(Texture2D original)
         {
             var tinted = new Texture2D(original.width, original.height, 
-            original.graphicsFormat, original.mipmapCount, TextureCreationFlags.MipChain);
+                original.graphicsFormat, original.mipmapCount, TextureCreationFlags.MipChain);
             
             Graphics.CopyTexture(original, tinted); 
             var data = tinted.GetRawTextureData<Color32>();
@@ -57,21 +51,19 @@ namespace Plugins.UnityHierarchyFolders
             {
                 Color32 c = data[index];
                 byte a = c.a;
-
-                Color.RGBToHSV(c, out float h, out float s, out float v);
                 c = Color.HSVToRGB(0, 0, 1);
                 c.a = a;
  
                 data[index] = c;
             }
 
-            var aaa = tinted.width * tinted.height * 4;
+            var mipmapSize = tinted.width * tinted.height * 4;
             var offset = 0; 
             for (int index = 0; index < tinted.mipmapCount; index++)
             {
                 tinted.SetPixelData(data, index, offset);
-                aaa >>= 2;
-                offset += aaa;
+                mipmapSize >>= 2;
+                offset += mipmapSize;
             }
             tinted.Apply();
             
@@ -80,80 +72,68 @@ namespace Plugins.UnityHierarchyFolders
 
         private static void Initialize()
         {
-            if (_isInitialized)
-            {
-                return;
-            }
+            if (isInitialized) { return; }
 
-            _closedFolderTexture = (Texture2D) EditorGUIUtility.IconContent("Folder Icon").image;
-            _openFolderTexture = (Texture2D) EditorGUIUtility.IconContent("FolderEmpty Icon").image;
+            closedFolderTexture = (Texture2D) EditorGUIUtility.IconContent("Folder Icon").image;
+            openFolderTexture = (Texture2D) EditorGUIUtility.IconContent("FolderEmpty Icon").image;
  
-            _openFolderSelectedTexture = GetTintedTexture(_openFolderTexture);
-            _closedFolderSelectedTexture = GetTintedTexture(_closedFolderTexture);
+            openFolderSelectedTexture = GetTintedTexture(openFolderTexture);
+            closedFolderSelectedTexture = GetTintedTexture(closedFolderTexture);
             
             const BindingFlags BindingAll = BindingFlags.Public 
               | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
             
-            //public static List<SceneHierarchyWindow> GetAllSceneHierarchyWindows()
             var assembly = typeof(SceneView).Assembly;
 
-            var sceneHierarchyWindowType = assembly.GetType("UnityEditor.SceneHierarchyWindow");
-            _getAllSceneHierarchyWindowsMethod = sceneHierarchyWindowType.GetMethod("GetAllSceneHierarchyWindows", BindingAll);
-            _sceneHierarchyProperty = sceneHierarchyWindowType.GetProperty("sceneHierarchy");
+            var type_sceneHierarchyWindow = assembly.GetType("UnityEditor.SceneHierarchyWindow");
+            meth_getAllSceneHierarchyWindows = type_sceneHierarchyWindow.GetMethod("GetAllSceneHierarchyWindows", BindingAll);
+            prop_sceneHierarchy = type_sceneHierarchyWindow.GetProperty("sceneHierarchy");
 
-            var sceneHierarchyType = assembly.GetType("UnityEditor.SceneHierarchy");
-            _treeViewProperty = sceneHierarchyType.GetProperty("treeView", BindingAll);
+            var type_sceneHierarchy = assembly.GetType("UnityEditor.SceneHierarchy");
+            prop_treeView = type_sceneHierarchy.GetProperty("treeView", BindingAll);
             
-            var treeViewControllerType = assembly.GetType("UnityEditor.IMGUI.Controls.TreeViewController");
-            _dataProperty = treeViewControllerType.GetProperty("data", BindingAll);
+            var type_treeViewController = assembly.GetType("UnityEditor.IMGUI.Controls.TreeViewController");
+            prop_data = type_treeViewController.GetProperty("data", BindingAll);
 
-            var iTreeViewDataSourceType = assembly.GetType("UnityEditor.IMGUI.Controls.ITreeViewDataSource");
-            _getRowsMethod = iTreeViewDataSourceType.GetMethod("GetRows");
-            _isExpandedMethod = iTreeViewDataSourceType.GetMethod("IsExpanded", new Type[] {typeof(TreeViewItem)});
+            var type_iTreeViewDataSource = assembly.GetType("UnityEditor.IMGUI.Controls.ITreeViewDataSource");
+            meth_getRows = type_iTreeViewDataSource.GetMethod("GetRows");
+            meth_isExpanded = type_iTreeViewDataSource.GetMethod("IsExpanded", new Type[] {typeof(TreeViewItem)});
             
-            var gameObjectTreeViewItemType = assembly.GetType("UnityEditor.GameObjectTreeViewItem");
-            _selectedIconProperty = gameObjectTreeViewItemType.GetProperty("selectedIcon", BindingAll);
-            _objectPPTRProperty = gameObjectTreeViewItemType.GetProperty("objectPPTR", BindingAll);
+            var type_gameObjectTreeViewItem = assembly.GetType("UnityEditor.GameObjectTreeViewItem");
+            prop_selectedIcon = type_gameObjectTreeViewItem.GetProperty("selectedIcon", BindingAll);
+            prop_objectPPTR = type_gameObjectTreeViewItem.GetProperty("objectPPTR", BindingAll);
 
-            _isInitialized = true;
+            isInitialized = true;
         }
 
-        private static void RefreshFolderIcons()
+        private static void ResetFolderIcons()
         {
             Initialize();
-            _hasProcessedFrame = false;
+            hasProcessedFrame = false;
         }
-
 
         private static void RefreshFolderIcons(int instanceid, Rect selectionrect)
         {
-            if (_hasProcessedFrame)
-            {
-                return;
-            }
-
-            _hasProcessedFrame = true;
+            if (hasProcessedFrame) { return; }
+            hasProcessedFrame = true;
             
-            var windows = ((IEnumerable)_getAllSceneHierarchyWindowsMethod.Invoke(null, new object[0])).Cast<EditorWindow>().ToList();
+            var windows = ((IEnumerable)meth_getAllSceneHierarchyWindows.Invoke(null, Array.Empty<object>())).Cast<EditorWindow>().ToList();
             foreach (EditorWindow h in windows)
             {
-                var sceneHierarchy = _sceneHierarchyProperty.GetValue(h);
-                var treeView = _treeViewProperty.GetValue(sceneHierarchy);
-                var data = _dataProperty.GetValue(treeView);
+                var sceneHierarchy = prop_sceneHierarchy.GetValue(h);
+                var treeView = prop_treeView.GetValue(sceneHierarchy);
+                var data = prop_data.GetValue(treeView);
 
-                IList<TreeViewItem> rows = (IList<TreeViewItem>) _getRowsMethod.Invoke(data, new object[0]);
+                var rows = (IList<TreeViewItem>) meth_getRows.Invoke(data, Array.Empty<object>());
                 foreach (TreeViewItem item in rows)
                 {
-                    Object itemObject = (Object) _objectPPTRProperty.GetValue(item);
-                    if (!itemObject || !Folder.folders.Contains(itemObject.GetInstanceID()))
-                    {
-                        continue;
-                    }
+                    var itemObject = (Object) prop_objectPPTR.GetValue(item);
+                    if (!itemObject || !Folder.IsFolder(itemObject)) { continue; }
 
-                    var isExpanded = (bool) _isExpandedMethod.Invoke(data, new object[] {item});
+                    var isExpanded = (bool) meth_isExpanded.Invoke(data, new object[] { item });
                     
-                    item.icon = isExpanded ? _openFolderTexture : _closedFolderTexture;
-                    _selectedIconProperty.SetValue(item, isExpanded ? _openFolderSelectedTexture : _closedFolderSelectedTexture);
+                    item.icon = isExpanded ? openFolderTexture : closedFolderTexture;
+                    prop_selectedIcon.SetValue(item, isExpanded ? openFolderSelectedTexture : closedFolderSelectedTexture);
                 }
             }
         }

@@ -1,14 +1,12 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEditor;
 #endif
 using UnityEngine;
 
-namespace UnityHierarchyFolders.Runtime
-{
+namespace UnityHierarchyFolders.Runtime {
 #if UNITY_EDITOR
     /// <summary>
     /// <para>Extension to Components to check if there are no dependencies to itself.</para>
@@ -58,27 +56,26 @@ namespace UnityHierarchyFolders.Runtime
         private static Tool lastTool;
         private static Folder toolLock;
         
-        public static HashSet<int> folders = new HashSet<int>();
-        //public static ReadOnlyCollection<int> folders => new ReadOnlyCollection<int>(_folders.ToList());
+        /// <summary>
+        /// The set of folder objects.
+        /// </summary>
+        private static HashSet<int> folders = new HashSet<int>();
 
-        private void Start()
-        {
-            folders.Add(gameObject.GetInstanceID());
-        }
+        /// <summary>
+        /// Test if a Unity object is a folder by way of containing a Folder component.
+        /// </summary>
+        /// <param name="obj">Test object.</param>
+        /// <returns>Is this object a folder?</returns>
+        public static bool IsFolder(UnityEngine.Object obj) => folders.Contains(obj.GetInstanceID());
 
-        private void OnDestroy()
-        {
-            folders.Remove(gameObject.GetInstanceID());
-        }
+        private void Start() => folders.Add(gameObject.GetInstanceID());
+        private void OnDestroy() => folders.Remove(gameObject.GetInstanceID());
 
         /// <summary>Hides all gizmos if selected to avoid accidental editing of the transform.</summary>
         private void HandleSelection()
         {
             // ignore if another folder object is already hiding gizmo
-            if (toolLock != null && toolLock != this)
-            {
-                return;
-            }
+            if (toolLock != null && toolLock != this) { return; }
 
             if (this != null && Selection.Contains(this.gameObject))
             {
@@ -130,10 +127,7 @@ namespace UnityHierarchyFolders.Runtime
                 .Where(c => c != this && !typeof(Transform).IsAssignableFrom(c.GetType()));
 
             // no items means no actions anyways
-            if (!existingComponents.Any())
-            {
-                return;
-            }
+            if (!existingComponents.Any()) {  return; }
 
             if (this.AskDelete())
             {
@@ -145,11 +139,10 @@ namespace UnityHierarchyFolders.Runtime
             }
         }
 
-        private void OnEnable()
-        {
-            // Hide inspector to prevent accidental editing of transform.
-            this.transform.hideFlags = HideFlags.HideInInspector;
-        }
+        /// <summary>
+        /// Hide inspector to prevent accidental editing of transform.
+        /// </summary>
+        private void OnEnable() => this.transform.hideFlags = HideFlags.HideInInspector;
 #endif
 
         /// <summary>
