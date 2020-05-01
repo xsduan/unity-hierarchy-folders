@@ -192,7 +192,7 @@ namespace UnityHierarchyFolders.Runtime
                 if (child.parent == this.transform)
                 {
                     child.name = $"{this.name}/{child.name}";
-                    child.parent = this.transform.parent;
+                    child.SetParent(this.transform.parent, true);
                     child.SetSiblingIndex(++index);
                 }
             }
