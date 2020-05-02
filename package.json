@@ -1,7 +1,7 @@
 {
   "name": "com.xsduan.hierarchy-folders",
   "displayName": "Heirarchy Folders",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "unity": "2018.1",
   "description": "Self-deleting Folder objects for the heirarchy.",
   "keywords": [
