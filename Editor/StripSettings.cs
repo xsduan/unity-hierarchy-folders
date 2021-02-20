@@ -47,10 +47,10 @@
             _instance = new Settings(PackageName);
 
             _playModeSetting = new UserSetting<StrippingMode>(_instance, nameof(_playModeSetting),
-                StrippingMode.Prepend, SettingsScope.User);
+                StrippingMode.PrependWithFolderName, SettingsScope.User);
 
             _buildSetting = new UserSetting<StrippingMode>(_instance, nameof(_buildSetting),
-                StrippingMode.Prepend, SettingsScope.User);
+                StrippingMode.PrependWithFolderName, SettingsScope.User);
         }
     }
 }

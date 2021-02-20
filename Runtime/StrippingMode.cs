@@ -2,6 +2,6 @@
 {
     public enum StrippingMode
     {
-        Prepend, Delete, None, Separator
+        PrependWithFolderName, Delete, DoNothing, ReplaceWithSeparator
     }
 }
