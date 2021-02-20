@@ -9,7 +9,7 @@ namespace UnityHierarchyFolders.Editor
 {
     public static class FolderEditorUtils
     {
-        private const string _actionName = "Create Heirarchy Folder %#&N";
+        private const string _actionName = "Create Hierarchy Folder %#&N";
 
         /// <summary>Add new folder "prefab".</summary>
         /// <param name="command">Menu command information.</param>
