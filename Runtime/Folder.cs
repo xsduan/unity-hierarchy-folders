@@ -185,18 +185,37 @@ namespace UnityHierarchyFolders.Runtime
         /// <summary>Takes direct children and links them to the parent transform or global.</summary>
         public void Flatten(StrippingMode strippingMode)
         {
-            // gather first-level children
+            if (strippingMode == StrippingMode.DoNothing)
+                return;
+
             int index = this.transform.GetSiblingIndex(); // keep components in logical order
-            foreach (var child in this.transform.GetComponentsInChildren<Transform>(includeInactive: true))
+            foreach (var child in GetComponentsInChildren<Transform>(includeInactive: true))
             {
-                if (child.parent == this.transform)
+                // gather only first-level children
+                if (child.parent != this.transform)
+                    continue;
+
+                if (strippingMode == StrippingMode.PrependWithFolderName)
                 {
                     child.name = $"{this.name}/{child.name}";
-                    child.SetParent(this.transform.parent, true);
-                    child.SetSiblingIndex(++index);
                 }
+
+                child.SetParent(this.transform.parent, true);
+                child.SetSiblingIndex(++index);
             }
 
+            if (strippingMode == StrippingMode.ReplaceWithSeparator)
+            {
+                name = $"--- {name} ---";
+            }
+            else
+            {
+                DestroySelf();
+            }
+        }
+
+        private void DestroySelf()
+        {
             if (Application.isPlaying)
             {
                 Destroy(this.gameObject);
