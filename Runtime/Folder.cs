@@ -183,7 +183,7 @@ namespace UnityHierarchyFolders.Runtime
         }
 
         /// <summary>Takes direct children and links them to the parent transform or global.</summary>
-        public void Flatten()
+        public void Flatten(StrippingMode strippingMode)
         {
             // gather first-level children
             int index = this.transform.GetSiblingIndex(); // keep components in logical order

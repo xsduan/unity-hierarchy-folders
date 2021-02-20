@@ -13,5 +13,7 @@
     "name": "Shane Duan"
   },
   "category": "Unity",
-  "dependencies": {}
+  "dependencies": {
+    "com.unity.settings-manager": "1.0.1"
+  }
 }
