@@ -183,7 +183,7 @@ namespace UnityHierarchyFolders.Runtime
         }
 
         /// <summary>Takes direct children and links them to the parent transform or global.</summary>
-        public void Flatten(StrippingMode strippingMode)
+        public void Flatten(StrippingMode strippingMode, bool capitalizeFolderName)
         {
             if (strippingMode == StrippingMode.DoNothing)
                 return;
@@ -206,7 +206,7 @@ namespace UnityHierarchyFolders.Runtime
 
             if (strippingMode == StrippingMode.ReplaceWithSeparator)
             {
-                name = $"--- {name} ---";
+                name = $"--- {(capitalizeFolderName ? name.ToUpper() : name)} ---";
             }
             else
             {

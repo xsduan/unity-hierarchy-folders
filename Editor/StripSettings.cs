@@ -11,6 +11,7 @@
         private static Settings _instance;
         private static UserSetting<StrippingMode> _playModeSetting;
         private static UserSetting<StrippingMode> _buildSetting;
+        private static UserSetting<bool> _capitalizeName;
 
         public static StrippingMode PlayMode
         {
@@ -42,6 +43,21 @@
             set => _buildSetting.value = value;
         }
 
+        public static bool CapitalizeName
+        {
+            get
+            {
+                if (_capitalizeName == null)
+                {
+                    Initialize();
+                }
+
+                return _capitalizeName.value;
+            }
+
+            set => _capitalizeName.value = value;
+        }
+
         private static void Initialize()
         {
             _instance = new Settings(PackageName);
@@ -51,6 +67,8 @@
 
             _buildSetting = new UserSetting<StrippingMode>(_instance, nameof(_buildSetting),
                 StrippingMode.PrependWithFolderName, SettingsScope.User);
+
+            _capitalizeName = new UserSetting<bool>(_instance, nameof(_capitalizeName), true, SettingsScope.User);
         }
     }
 }
