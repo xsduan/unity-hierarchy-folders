@@ -55,7 +55,7 @@ namespace UnityHierarchyFolders.Editor
         public static int IconColumnCount => IconColors.GetLength(0);
         public static int IconRowCount => IconColors.GetLength(1);
 
-        public static readonly Color[,] IconColors = {
+        private static readonly Color[,] IconColors = {
             {new Color(0.09f, 0.57f, 0.82f), new Color(0.05f, 0.34f, 0.48f),},
             {new Color(0.09f, 0.67f, 0.67f), new Color(0.05f, 0.42f, 0.42f),},
             {new Color(0.23f, 0.73f, 0.36f), new Color(0.15f, 0.41f, 0.22f),},
@@ -101,7 +101,8 @@ namespace UnityHierarchyFolders.Editor
                     newTexture = new Texture2D(original.width, original.width, TextureFormat.ARGB32, false, true)
                     {
                         name = name,
-                        filterMode = FilterMode.Bilinear
+                        filterMode = FilterMode.Bilinear,
+                        hideFlags = HideFlags.DontSave
                     };
 
                     newTexture.ReadPixels(new Rect(0.0f, 0.0f, original.width, original.width), 0, 0);
@@ -200,6 +201,7 @@ namespace UnityHierarchyFolders.Editor
                     bool isExpanded = (bool)meth_isExpanded.Invoke(data, new object[] { item });
 
                     var icons = ColoredFolderIcons(Mathf.Clamp(colorIndex, 0, _coloredFolderIcons.Length - 1));
+
                     item.icon = isExpanded ? icons.open : icons.closed;
 
                     prop_selectedIcon.SetValue(item, isExpanded ? _openFolderSelectedTexture : _closedFolderSelectedTexture);
