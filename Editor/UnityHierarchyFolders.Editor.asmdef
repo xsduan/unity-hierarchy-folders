@@ -3,7 +3,8 @@
     "rootNamespace": "",
     "references": [
         "UnityHierarchyFolders.Runtime",
-        "Unity.Settings.Editor"
+        "Unity.Settings.Editor",
+        "Unity.EditorCoroutines.Editor"
     ],
     "includePlatforms": [
         "Editor"

@@ -14,6 +14,8 @@
   },
   "category": "Unity",
   "dependencies": {
+	"com.unity.editorcoroutines": "1.0.0",
     "com.unity.settings-manager": "1.0.1"
+	
   }
 }
