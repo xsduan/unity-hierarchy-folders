@@ -12,8 +12,69 @@ namespace UnityHierarchyFolders.Editor
     using UnityEngine;
 
     /// <summary>Helps to create new textures.</summary>
-    public static class TextureHelper
+    internal static class TextureHelper
     {
+        private static readonly Color _fullyTransparent = new Color(1f, 1f, 1f, 0f);
+
+        private static Material _tintMaterial;
+        private static Material _colorReplaceMaterial;
+
+        public static Texture2D GetTintedTexture(Texture2D original, Color tint, string name)
+        {
+            return GetTextureWithMaterial(original, GetTintMaterial(tint), name);
+        }
+
+        public static Texture2D GetWhiteTexture(Texture2D original, string name)
+        {
+            return GetTextureWithMaterial(original, GetColorReplaceMaterial(Color.white), name);
+        }
+
+        private static Material GetTintMaterial(Color tint)
+        {
+            if (_tintMaterial == null)
+                _tintMaterial = new Material(Shader.Find("UI/Default"));
+
+            _tintMaterial.color = tint;
+            return _tintMaterial;
+        }
+
+        private static Material GetColorReplaceMaterial(Color color)
+        {
+            if (_colorReplaceMaterial == null)
+                _colorReplaceMaterial = new Material(Shader.Find("UI/Replace color"));
+
+            _colorReplaceMaterial.color = color;
+            return _colorReplaceMaterial;
+        }
+
+        private static Texture2D GetTextureWithMaterial(Texture2D original, Material material, string name)
+        {
+            Texture2D newTexture;
+
+            using (new SRGBWriteScope(true))
+            {
+                using (var temporary = new TemporaryActiveTexture(original.width, original.height, 0))
+                {
+                    GL.Clear(false, true, _fullyTransparent);
+
+                    Graphics.Blit(original, temporary, material);
+
+                    newTexture = new Texture2D(original.width, original.width, TextureFormat.ARGB32, false, true)
+                    {
+                        name = name,
+                        filterMode = FilterMode.Bilinear,
+                        hideFlags = HideFlags.DontSave
+                    };
+
+                    newTexture.ReadPixels(new Rect(0f, 0f, original.width, original.width), 0, 0);
+                    newTexture.alphaIsTransparency = true;
+                    newTexture.Apply();
+                }
+            }
+
+            return newTexture;
+        }
+
         /// <summary>
         /// Temporarily sets <see cref="GL.sRGBWrite"/> to the passed value, then returns it back.
         /// </summary>
@@ -22,7 +83,7 @@ namespace UnityHierarchyFolders.Editor
         {
             private readonly bool _previousValue;
 
-            /// <summary>Temporarily sets <see cref="GL.sRGBWrite"/> to <paramref name=""/>, then executes the action.</summary>
+            /// <summary>Temporarily sets <see cref="GL.sRGBWrite"/> to <c>true</c>, then executes the action.</summary>
             /// <param name="enableWrite"> Temporary value of <see cref="GL.sRGBWrite"/>. </param>
             /// <example><code>
             /// using (new SRGBWriteScope(true))
