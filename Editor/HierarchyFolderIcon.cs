@@ -13,7 +13,7 @@ using Object = UnityEngine.Object;
 
 namespace UnityHierarchyFolders.Editor
 {
-    public class HierarchyFolderIcon
+    public static class HierarchyFolderIcon
     {
 #if UNITY_2020_1_OR_NEWER
         private const string _openedFolderPrefix = "FolderOpened";
@@ -29,7 +29,6 @@ namespace UnityHierarchyFolders.Editor
 
         private static bool _isInitialized;
         private static bool _hasProcessedFrame = true;
-
 
         // Reflected members
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Special naming scheme")]
@@ -75,41 +74,43 @@ namespace UnityHierarchyFolders.Editor
             EditorApplication.hierarchyWindowItemOnGUI += RefreshFolderIcons;
         }
 
-        private static Texture2D GetTintedTexture(Texture2D original, Color tint, string name = "") =>
-            GetColorizedTexture(original, c => c * tint, name);
-
-        private static Texture2D GetWhiteTexture(Texture2D original, string name = "") =>
-            GetColorizedTexture(original, c => new Color(255, 255, 255, c.a), name);
-
-        private static Texture2D GetColorizedTexture(Texture2D original, Func<Color32, Color32> colorFilter, string name = "")
+        private static Texture2D GetTintedTexture(Texture2D original, Color tint, string name)
         {
-            var tinted = new Texture2D(original.width, original.height,
-                original.graphicsFormat, original.mipmapCount, TextureCreationFlags.MipChain)
-            {
-                name = name
-            };
+            var material = new Material(Shader.Find("UI/Default")) { color = tint };
+            return GetTextureWithMaterial(original, material, name);
+        }
 
-            Graphics.CopyTexture(original, tinted);
+        private static Texture2D GetWhiteTexture(Texture2D original, string name)
+        {
+            var material = new Material(Shader.Find("UI/Replace color")) { color = Color.white };
+            return GetTextureWithMaterial(original, material, name);
+        }
 
-            var data = tinted.GetRawTextureData<Color32>();
-            for (int index = 0, len = data.Length; index < len; index++)
+        private static Texture2D GetTextureWithMaterial(Texture2D original, Material material, string name)
+        {
+            Texture2D newTexture;
+
+            using (new TextureHelper.SRGBWriteScope(true))
             {
-                data[index] = colorFilter(data[index]);
+                using (var temporary = new TextureHelper.TemporaryActiveTexture(original.width, original.height, 0))
+                {
+                    GL.Clear(false, true, new Color(1f, 1f, 1f, 0f));
+
+                    Graphics.Blit(original, temporary, material);
+
+                    newTexture = new Texture2D(original.width, original.width, TextureFormat.ARGB32, false, true)
+                    {
+                        name = name,
+                        filterMode = FilterMode.Bilinear
+                    };
+
+                    newTexture.ReadPixels(new Rect(0.0f, 0.0f, original.width, original.width), 0, 0);
+                    newTexture.alphaIsTransparency = true;
+                    newTexture.Apply();
+                }
             }
 
-            int mipmapSize = tinted.width * tinted.height * 4;
-            int offset = 0;
-            for (int index = 0; index < tinted.mipmapCount; index++)
-            {
-                tinted.SetPixelData(data, index, offset);
-                mipmapSize >>= 2;
-                offset += mipmapSize;
-            }
-
-            tinted.hideFlags = HideFlags.DontSave;
-            tinted.Apply();
-
-            return tinted;
+            return newTexture;
         }
 
         private static void InitIfNeeded()
