@@ -53,6 +53,17 @@ To install OpenUPM, please see the [documentation][2].
 
 [2]: https://openupm.com/docs/
 
+## Stripping Modes
+
+You can choose how exactly the folder will be removed from the hierarchy in **Preferences -> HierarchyFolders**.
+
+The following stripping modes are available:
+
+- **Prepend With Folder Name** - The folder will be removed, and all child objects will be prepended with the folder name (e.g. childObject => Folder/childObject). This is the default behaviour.
+- **Delete** - The folder will be removed, and names of child objects will not change.
+- **Do Nothing** *(available only for Play Mode)* - The folder will not be removed, the hierarchy will not change in play mode. Use this mode if you don't need extra performance in Editor.
+- **Replace With Separator** *(available only for Play Mode)* - The hierarchy will flatten, and the folder will be replaced with a separator (e.g. "--- FOLDER ---"). Useful if you need extra performance in Editor but still want to see what folder game objects belong to.
+
 ## Possible FAQs
 
 ### Why folders in the first place?

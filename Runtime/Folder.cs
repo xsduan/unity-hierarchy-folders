@@ -183,18 +183,47 @@ namespace UnityHierarchyFolders.Runtime
         }
 
         /// <summary>Takes direct children and links them to the parent transform or global.</summary>
-        public void Flatten()
+        /// <param name="strippingMode">Stripping mode to apply.</param>
+        /// <param name="capitalizeFolderName">
+        /// Whether to capitalize the folder name when replacing it with a separator.
+        /// Applies only if <paramref name="strippingMode"/> is <see cref="StrippingMode.ReplaceWithSeparator"/>
+        /// </param>
+        public void Flatten(StrippingMode strippingMode, bool capitalizeFolderName)
         {
-            // gather first-level children
+            if (strippingMode == StrippingMode.DoNothing)
+                return;
+
+            MoveChildrenOut(strippingMode);
+
+            HandleSelf(strippingMode, capitalizeFolderName);
+        }
+
+        private void MoveChildrenOut(StrippingMode strippingMode)
+        {
             int index = this.transform.GetSiblingIndex(); // keep components in logical order
-            foreach (var child in this.transform.GetComponentsInChildren<Transform>(includeInactive: true))
+
+            foreach (var child in GetComponentsInChildren<Transform>(includeInactive: true))
             {
-                if (child.parent == this.transform)
+                // gather only first-level children
+                if (child.parent != this.transform)
+                    continue;
+
+                if (strippingMode == StrippingMode.PrependWithFolderName)
                 {
                     child.name = $"{this.name}/{child.name}";
-                    child.SetParent(this.transform.parent, true);
-                    child.SetSiblingIndex(++index);
                 }
+
+                child.SetParent(this.transform.parent, true);
+                child.SetSiblingIndex(++index);
+            }
+        }
+
+        private void HandleSelf(StrippingMode strippingMode, bool capitalizeFolderName)
+        {
+            if (strippingMode == StrippingMode.ReplaceWithSeparator)
+            {
+                name = $"--- {(capitalizeFolderName ? name.ToUpper() : name)} ---";
+                return;
             }
 
             if (Application.isPlaying)
