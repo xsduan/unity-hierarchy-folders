@@ -7,7 +7,6 @@ using System.Reflection;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
 using UnityHierarchyFolders.Runtime;
 using Object = UnityEngine.Object;
 
@@ -74,46 +73,6 @@ namespace UnityHierarchyFolders.Editor
             EditorApplication.hierarchyWindowItemOnGUI += RefreshFolderIcons;
         }
 
-        private static Texture2D GetTintedTexture(Texture2D original, Color tint, string name)
-        {
-            var material = new Material(Shader.Find("UI/Default")) { color = tint };
-            return GetTextureWithMaterial(original, material, name);
-        }
-
-        private static Texture2D GetWhiteTexture(Texture2D original, string name)
-        {
-            var material = new Material(Shader.Find("UI/Replace color")) { color = Color.white };
-            return GetTextureWithMaterial(original, material, name);
-        }
-
-        private static Texture2D GetTextureWithMaterial(Texture2D original, Material material, string name)
-        {
-            Texture2D newTexture;
-
-            using (new TextureHelper.SRGBWriteScope(true))
-            {
-                using (var temporary = new TextureHelper.TemporaryActiveTexture(original.width, original.height, 0))
-                {
-                    GL.Clear(false, true, new Color(1f, 1f, 1f, 0f));
-
-                    Graphics.Blit(original, temporary, material);
-
-                    newTexture = new Texture2D(original.width, original.width, TextureFormat.ARGB32, false, true)
-                    {
-                        name = name,
-                        filterMode = FilterMode.Bilinear,
-                        hideFlags = HideFlags.DontSave
-                    };
-
-                    newTexture.ReadPixels(new Rect(0.0f, 0.0f, original.width, original.width), 0, 0);
-                    newTexture.alphaIsTransparency = true;
-                    newTexture.Apply();
-                }
-            }
-
-            return newTexture;
-        }
-
         private static void InitIfNeeded()
         {
             if (_isInitialized) { return; }
@@ -124,8 +83,8 @@ namespace UnityHierarchyFolders.Editor
             // We could use the actual white folder icons but I prefer the look of the tinted white folder icon
             // To use the actual white version:
             // texture = (Texture2D) EditorGUIUtility.IconContent($"{OpenedFolderPrefix | ClosedFolderPrefix} On Icon").image;
-            _openFolderSelectedTexture = GetWhiteTexture(_openFolderTexture, $"{_openedFolderPrefix} Icon White");
-            _closedFolderSelectedTexture = GetWhiteTexture(_closedFolderTexture, $"{_closedFolderPrefix} Icon White");
+            _openFolderSelectedTexture = TextureHelper.GetWhiteTexture(_openFolderTexture, $"{_openedFolderPrefix} Icon White");
+            _closedFolderSelectedTexture = TextureHelper.GetWhiteTexture(_closedFolderTexture, $"{_closedFolderPrefix} Icon White");
 
             _coloredFolderIcons = new (Texture2D, Texture2D)[] { (_openFolderTexture, _closedFolderTexture) };
 
@@ -136,9 +95,9 @@ namespace UnityHierarchyFolders.Editor
                     int index = 1 + column + row * IconColumnCount;
                     var color = IconColors[column, row];
 
-                    var openFolderIcon = GetTintedTexture(_openFolderSelectedTexture,
+                    var openFolderIcon = TextureHelper.GetTintedTexture(_openFolderSelectedTexture,
                         color, $"{_openFolderSelectedTexture.name} {index}");
-                    var closedFolderIcon = GetTintedTexture(_closedFolderSelectedTexture,
+                    var closedFolderIcon = TextureHelper.GetTintedTexture(_closedFolderSelectedTexture,
                         color, $"{_closedFolderSelectedTexture.name} {index}");
 
                     ArrayUtility.Add(ref _coloredFolderIcons, (openFolderIcon, closedFolderIcon));
