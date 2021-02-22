@@ -55,7 +55,7 @@ To install OpenUPM, please see the [documentation][2].
 
 ## Stripping Modes
 
-You can choose how exactly the folder will be removed from the hierarchy in **Preferences -> HierarchyFolders**.
+You can choose how exactly the folder will be removed from the hierarchy in **Preferences -> Hierarchy Folders**.
 
 The following stripping modes are available:
 
@@ -63,6 +63,10 @@ The following stripping modes are available:
 - **Delete** - The folder will be removed, and names of child objects will not change.
 - **Do Nothing** *(available only for Play Mode)* - The folder will not be removed, the hierarchy will not change in play mode. Use this mode if you don't need extra performance in Editor.
 - **Replace With Separator** *(available only for Play Mode)* - The hierarchy will flatten, and the folder will be replaced with a separator (e.g. "--- FOLDER ---"). Useful if you need extra performance in Editor but still want to see what folder game objects belong to.
+
+## Stripping folders from prefabs
+
+With this plugin, it is possible to strip folders from prefabs that are not present in the scene but are instantiated at runtime. Upon entering Play Mode, the plugin goes through all prefabs containing folders and strips them. On exiting Play Mode, the changes are reverted. It shouldn't add significant overhead unless you have thousands of prefabs with folders inside, but if entering Play Mode takes too long, you can try disabling this option in **Preferences -> Hierarchy Folders**. You can also choose whether to strip folders from prefabs before they are packed into a build.
 
 ## Possible FAQs
 

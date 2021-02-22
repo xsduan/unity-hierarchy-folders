@@ -36,10 +36,17 @@
             if ( ! StripSettings.StripFoldersFromPrefabsInPlayMode || StripSettings.PlayMode == StrippingMode.DoNothing)
                 return;
 
+
             if (state == PlayModeStateChange.ExitingEditMode)
+            {
+                // Stripping folders from all prefabs in the project instead of only the ones referenced in the scenes
+                // because a prefab can be hot-swapped in Play Mode.
                 StripFoldersFromAllPrefabs();
+            }
             else if (state == PlayModeStateChange.EnteredEditMode)
+            {
                 RevertChanges();
+            }
         }
 
         private static void StripFoldersFromDependentPrefabs()
