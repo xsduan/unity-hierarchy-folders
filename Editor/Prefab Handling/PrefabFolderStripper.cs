@@ -1,11 +1,14 @@
 ﻿namespace UnityHierarchyFolders.Editor
 {
+    using System;
     using System.IO;
     using System.Linq;
     using Runtime;
     using UnityEditor;
     using UnityEditor.Build;
     using UnityEditor.Build.Reporting;
+    using UnityEngine;
+    using Object = UnityEngine.Object;
 
     [InitializeOnLoad]
     public class PrefabFolderStripper : IPreprocessBuildWithReport, IPostprocessBuildWithReport
@@ -36,7 +39,6 @@
             if ( ! StripSettings.StripFoldersFromPrefabsInPlayMode || StripSettings.PlayMode == StrippingMode.DoNothing)
                 return;
 
-
             if (state == PlayModeStateChange.ExitingEditMode)
             {
                 // Stripping folders from all prefabs in the project instead of only the ones referenced in the scenes
@@ -55,7 +57,7 @@
             var dependentAssetsPaths = AssetDatabase.GetDependencies(scenePaths, true);
 
             var prefabsWithLabel = dependentAssetsPaths.Where(path =>
-                    AssetDatabase.GetLabels(AssetDatabase.GUIDFromAssetPath(path)).Contains(LabelHandler.FolderPrefabLabel))
+                    AssetDatabase.GetLabels(GetAssetForLabel(path)).Contains(LabelHandler.FolderPrefabLabel))
                 .ToArray();
 
             _changedPrefabs = new (string, string)[prefabsWithLabel.Length];
@@ -66,6 +68,21 @@
                 _changedPrefabs[i] = (path, File.ReadAllText(path));
                 StripFoldersFromPrefab(path, StripSettings.Build);
             }
+        }
+
+        private static
+#if UNITY_2020_1_OR_NEWER
+            GUID
+#else
+            Object
+#endif
+            GetAssetForLabel(string path)
+        {
+#if UNITY_2020_1_OR_NEWER
+            return AssetDatabase.GUIDFromAssetPath(path);
+#else
+            return AssetDatabase.LoadAssetAtPath<GameObject>(path);
+#endif
         }
 
         private static void StripFoldersFromAllPrefabs()
@@ -85,9 +102,9 @@
 
         private static void StripFoldersFromPrefab(string prefabPath, StrippingMode strippingMode)
         {
-            using (var temp = new PrefabUtility.EditPrefabContentsScope(prefabPath))
+            using (var temp = new EditPrefabContentsScope(prefabPath))
             {
-                var folders = temp.prefabContentsRoot.GetComponentsInChildren<Folder>();
+                var folders = temp.PrefabContentsRoot.GetComponentsInChildren<Folder>();
 
                 foreach (Folder folder in folders)
                 {
@@ -101,6 +118,28 @@
             foreach ((string path, string content) in _changedPrefabs)
             {
                 File.WriteAllText(path, content);
+            }
+        }
+
+        /// <summary>
+        /// A copy of <see cref="PrefabUtility.EditPrefabContentsScope"/> for backwards compatibility with Unity 2019.
+        /// </summary>
+        private readonly struct EditPrefabContentsScope : IDisposable
+        {
+            public readonly GameObject PrefabContentsRoot;
+
+            private readonly string _assetPath;
+
+            public EditPrefabContentsScope(string assetPath)
+            {
+                PrefabContentsRoot = PrefabUtility.LoadPrefabContents(assetPath);
+                _assetPath = assetPath;
+            }
+
+            public void Dispose()
+            {
+                PrefabUtility.SaveAsPrefabAsset(PrefabContentsRoot, _assetPath);
+                PrefabUtility.UnloadPrefabContents(PrefabContentsRoot);
             }
         }
     }
