@@ -21,17 +21,19 @@
 
         public void OnPreprocessBuild(BuildReport report)
         {
-            StripFoldersFromDependentPrefabs();
+            if (StripSettings.StripFoldersFromPrefabsInBuild)
+                StripFoldersFromDependentPrefabs();
         }
 
         public void OnPostprocessBuild(BuildReport report)
         {
-            RevertChanges();
+            if (StripSettings.StripFoldersFromPrefabsInBuild)
+                RevertChanges();
         }
 
         private static void HandlePrefabsOnPlayMode(PlayModeStateChange state)
         {
-            if (StripSettings.PlayMode == StrippingMode.DoNothing)
+            if ( ! StripSettings.StripFoldersFromPrefabsInPlayMode || StripSettings.PlayMode == StrippingMode.DoNothing)
                 return;
 
             if (state == PlayModeStateChange.ExitingEditMode)
