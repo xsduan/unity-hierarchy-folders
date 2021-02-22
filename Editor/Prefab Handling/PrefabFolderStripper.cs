@@ -1,4 +1,4 @@
-﻿namespace UnityHierarchyFolders.Editor.Prefabs
+﻿namespace UnityHierarchyFolders.Editor
 {
     using System.IO;
     using System.Linq;
@@ -6,7 +6,6 @@
     using UnityEditor;
     using UnityEditor.Build;
     using UnityEditor.Build.Reporting;
-    using UnityEngine;
 
     [InitializeOnLoad]
     public class PrefabFolderStripper : IPreprocessBuildWithReport, IPostprocessBuildWithReport

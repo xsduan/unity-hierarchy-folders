@@ -1,10 +1,9 @@
-﻿namespace UnityHierarchyFolders.Editor.Prefabs
+﻿namespace UnityHierarchyFolders.Editor
 {
     using System.Linq;
     using Runtime;
     using UnityEditor;
     using UnityEngine;
-    using UnityEngine.Assertions;
 
     public class LabelHandler : AssetPostprocessor
     {
