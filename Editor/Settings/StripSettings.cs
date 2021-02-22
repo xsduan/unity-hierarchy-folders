@@ -12,16 +12,14 @@
         private static UserSetting<StrippingMode> _playModeSetting;
         private static UserSetting<StrippingMode> _buildSetting;
         private static UserSetting<bool> _capitalizeName;
+        private static UserSetting<bool> _stripFoldersFromPrefabsInPlayMode;
+        private static UserSetting<bool> _stripFoldersFromPrefabsInBuild;
 
         public static StrippingMode PlayMode
         {
             get
             {
-                if (_playModeSetting == null)
-                {
-                    Initialize();
-                }
-
+                InitializeIfNeeded();
                 return _playModeSetting.value;
             }
 
@@ -32,11 +30,7 @@
         {
             get
             {
-                if (_buildSetting == null)
-                {
-                    Initialize();
-                }
-
+                InitializeIfNeeded();
                 return _buildSetting.value;
             }
 
@@ -47,19 +41,40 @@
         {
             get
             {
-                if (_capitalizeName == null)
-                {
-                    Initialize();
-                }
-
+                InitializeIfNeeded();
                 return _capitalizeName.value;
             }
 
             set => _capitalizeName.value = value;
         }
 
-        private static void Initialize()
+        public static bool StripFoldersFromPrefabsInPlayMode
         {
+            get
+            {
+                InitializeIfNeeded();
+                return _stripFoldersFromPrefabsInPlayMode.value;
+            }
+
+            set => _stripFoldersFromPrefabsInPlayMode.value = value;
+        }
+
+        public static bool StripFoldersFromPrefabsInBuild
+        {
+            get
+            {
+                InitializeIfNeeded();
+                return _stripFoldersFromPrefabsInBuild.value;
+            }
+
+            set => _stripFoldersFromPrefabsInBuild.value = value;
+        }
+
+        private static void InitializeIfNeeded()
+        {
+            if (_instance != null)
+                return;
+
             _instance = new Settings(PackageName);
 
             _playModeSetting = new UserSetting<StrippingMode>(_instance, nameof(_playModeSetting),
@@ -69,6 +84,12 @@
                 StrippingMode.PrependWithFolderName, SettingsScope.User);
 
             _capitalizeName = new UserSetting<bool>(_instance, nameof(_capitalizeName), true, SettingsScope.User);
+
+            _stripFoldersFromPrefabsInPlayMode = new UserSetting<bool>(_instance,
+                nameof(_stripFoldersFromPrefabsInPlayMode), true, SettingsScope.User);
+
+            _stripFoldersFromPrefabsInBuild = new UserSetting<bool>(_instance,
+                nameof(_stripFoldersFromPrefabsInPlayMode), true, SettingsScope.User);
         }
     }
 }

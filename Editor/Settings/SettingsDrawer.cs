@@ -15,7 +15,9 @@
         {
             { nameof(StripSettings.PlayMode), "Play Mode Stripping Type" },
             { nameof(StripSettings.Build), "Build Stripping Type" },
-            { nameof(StripSettings.CapitalizeName), "Capitalize Folder Names" }
+            { nameof(StripSettings.CapitalizeName), "Capitalize Folder Names" },
+            { nameof(StripSettings.StripFoldersFromPrefabsInPlayMode), "Strip folders from prefabs in Play Mode" },
+            { nameof(StripSettings.StripFoldersFromPrefabsInBuild), "Strip folders from prefabs in build" },
         };
 
         private static readonly GUIContent _buildStrippingName = new GUIContent(_fieldNames[nameof(StripSettings.Build)]);
@@ -23,13 +25,11 @@
         [SettingsProvider]
         public static SettingsProvider CreateSettingsProvider()
         {
-            var provider = new SettingsProvider("Preferences/Hierarchy Folders", SettingsScope.User)
+            return new SettingsProvider("Preferences/Hierarchy Folders", SettingsScope.User)
             {
                 guiHandler = OnGUI,
                 keywords = GetKeywords()
             };
-
-            return provider;
         }
 
         private static void OnGUI(string searchContext)
@@ -45,6 +45,22 @@
 
             StripSettings.Build = (StrippingMode) EditorGUILayout.EnumPopup(
                 _buildStrippingName, StripSettings.Build, TypeCanBeInBuild, true);
+
+            EditorGUILayout.Space(EditorGUIUtility.singleLineHeight);
+
+            EditorGUILayout.HelpBox(
+                "If you notice that entering play mode takes too long, you can try disabling this option. " +
+                "Folders will not be stripped from prefabs that are instantiated at runtime, but if performance in " +
+                "Play Mode does not matter, you will be fine.", MessageType.Warning);
+
+            using (new TemporaryLabelWidth(230f))
+            {
+                StripSettings.StripFoldersFromPrefabsInPlayMode =
+                    EditorGUILayout.Toggle(_fieldNames[nameof(StripSettings.StripFoldersFromPrefabsInPlayMode)], StripSettings.StripFoldersFromPrefabsInPlayMode);
+
+                StripSettings.StripFoldersFromPrefabsInBuild =
+                    EditorGUILayout.Toggle(_fieldNames[nameof(StripSettings.StripFoldersFromPrefabsInBuild)], StripSettings.StripFoldersFromPrefabsInBuild);
+            }
         }
 
         private static HashSet<string> GetKeywords()
@@ -71,6 +87,25 @@
         {
             var mode = (StrippingMode) enumValue;
             return mode == StrippingMode.PrependWithFolderName || mode == StrippingMode.Delete;
+        }
+
+        /// <summary>
+        /// Temporarily sets <see cref="EditorGUIUtility.labelWidth"/> to a certain value, than reverts it.
+        /// </summary>
+        private readonly struct TemporaryLabelWidth : IDisposable
+        {
+            private readonly float _oldWidth;
+
+            public TemporaryLabelWidth(float width)
+            {
+                _oldWidth = EditorGUIUtility.labelWidth;
+                EditorGUIUtility.labelWidth = width;
+            }
+
+            public void Dispose()
+            {
+                EditorGUIUtility.labelWidth = _oldWidth;
+            }
         }
     }
 }
