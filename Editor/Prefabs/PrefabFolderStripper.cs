@@ -3,26 +3,43 @@
     using System.IO;
     using Runtime;
     using UnityEditor;
+    using UnityEditor.Build;
+    using UnityEditor.Build.Reporting;
 
     [InitializeOnLoad]
-    public static class PrefabFolderStripper
+    public class PrefabFolderStripper : IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
         private static (string path, string assetContent)[] _changedPrefabs;
 
         static PrefabFolderStripper()
         {
-            EditorApplication.playModeStateChanged += HandlePrefabs;
+            EditorApplication.playModeStateChanged += HandlePrefabsOnPlayMode;
         }
 
-        private static void HandlePrefabs(PlayModeStateChange state)
+        public int callbackOrder => 0;
+
+        public void OnPreprocessBuild(BuildReport report)
         {
+            StripFolders(StripSettings.Build);
+        }
+
+        public void OnPostprocessBuild(BuildReport report)
+        {
+            RevertChanges();
+        }
+
+        private static void HandlePrefabsOnPlayMode(PlayModeStateChange state)
+        {
+            if (StripSettings.PlayMode == StrippingMode.DoNothing)
+                return;
+
             if (state == PlayModeStateChange.ExitingEditMode)
-                StripFolders();
+                StripFolders(StripSettings.PlayMode);
             else if (state == PlayModeStateChange.EnteredEditMode)
                 RevertChanges();
         }
 
-        private static void StripFolders()
+        private static void StripFolders(StrippingMode strippingMode)
         {
             var prefabGUIDs = AssetDatabase.FindAssets($"l: {LabelHandler.FolderPrefabLabel}");
             _changedPrefabs = new (string, string)[prefabGUIDs.Length];
@@ -31,19 +48,18 @@
             {
                 string guid = prefabGUIDs[i];
                 string path = AssetDatabase.GUIDToAssetPath(guid);
-                var prefabRoot = PrefabUtility.LoadPrefabContents(path);
 
-                _changedPrefabs[i] = (path, File.ReadAllText(path));
-
-                var folders = prefabRoot.GetComponentsInChildren<Folder>();
-
-                foreach (Folder folder in folders)
+                using (var temp = new PrefabUtility.EditPrefabContentsScope(path))
                 {
-                    folder.Flatten(StripSettings.PlayMode, StripSettings.CapitalizeName);
-                }
+                    _changedPrefabs[i] = (path, File.ReadAllText(path));
 
-                PrefabUtility.SaveAsPrefabAsset(prefabRoot, path);
-                PrefabUtility.UnloadPrefabContents(prefabRoot);
+                    var folders = temp.prefabContentsRoot.GetComponentsInChildren<Folder>();
+
+                    foreach (Folder folder in folders)
+                    {
+                        folder.Flatten(strippingMode, StripSettings.CapitalizeName);
+                    }
+                }
             }
         }
 
