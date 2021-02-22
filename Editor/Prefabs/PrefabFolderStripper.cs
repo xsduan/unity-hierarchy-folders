@@ -1,10 +1,12 @@
 ﻿namespace UnityHierarchyFolders.Editor.Prefabs
 {
     using System.IO;
+    using System.Linq;
     using Runtime;
     using UnityEditor;
     using UnityEditor.Build;
     using UnityEditor.Build.Reporting;
+    using UnityEngine;
 
     [InitializeOnLoad]
     public class PrefabFolderStripper : IPreprocessBuildWithReport, IPostprocessBuildWithReport
@@ -20,7 +22,7 @@
 
         public void OnPreprocessBuild(BuildReport report)
         {
-            StripFolders(StripSettings.Build);
+            StripFoldersFromDependentPrefabs();
         }
 
         public void OnPostprocessBuild(BuildReport report)
@@ -34,12 +36,31 @@
                 return;
 
             if (state == PlayModeStateChange.ExitingEditMode)
-                StripFolders(StripSettings.PlayMode);
+                StripFoldersFromAllPrefabs();
             else if (state == PlayModeStateChange.EnteredEditMode)
                 RevertChanges();
         }
 
-        private static void StripFolders(StrippingMode strippingMode)
+        private static void StripFoldersFromDependentPrefabs()
+        {
+            var scenePaths = EditorBuildSettings.scenes.Select(scene => scene.path).ToArray();
+            var dependentAssetsPaths = AssetDatabase.GetDependencies(scenePaths, true);
+
+            var prefabsWithLabel = dependentAssetsPaths.Where(path =>
+                    AssetDatabase.GetLabels(AssetDatabase.GUIDFromAssetPath(path)).Contains(LabelHandler.FolderPrefabLabel))
+                .ToArray();
+
+            _changedPrefabs = new (string, string)[prefabsWithLabel.Length];
+
+            for (int i = 0; i < prefabsWithLabel.Length; i++)
+            {
+                string path = prefabsWithLabel[i];
+                _changedPrefabs[i] = (path, File.ReadAllText(path));
+                StripFoldersFromPrefab(path, StripSettings.Build);
+            }
+        }
+
+        private static void StripFoldersFromAllPrefabs()
         {
             var prefabGUIDs = AssetDatabase.FindAssets($"l: {LabelHandler.FolderPrefabLabel}");
             _changedPrefabs = new (string, string)[prefabGUIDs.Length];
@@ -49,16 +70,20 @@
                 string guid = prefabGUIDs[i];
                 string path = AssetDatabase.GUIDToAssetPath(guid);
 
-                using (var temp = new PrefabUtility.EditPrefabContentsScope(path))
+                _changedPrefabs[i] = (path, File.ReadAllText(path));
+                StripFoldersFromPrefab(path, StripSettings.PlayMode);
+            }
+        }
+
+        private static void StripFoldersFromPrefab(string prefabPath, StrippingMode strippingMode)
+        {
+            using (var temp = new PrefabUtility.EditPrefabContentsScope(prefabPath))
+            {
+                var folders = temp.prefabContentsRoot.GetComponentsInChildren<Folder>();
+
+                foreach (Folder folder in folders)
                 {
-                    _changedPrefabs[i] = (path, File.ReadAllText(path));
-
-                    var folders = temp.prefabContentsRoot.GetComponentsInChildren<Folder>();
-
-                    foreach (Folder folder in folders)
-                    {
-                        folder.Flatten(strippingMode, StripSettings.CapitalizeName);
-                    }
+                    folder.Flatten(strippingMode, StripSettings.CapitalizeName);
                 }
             }
         }
