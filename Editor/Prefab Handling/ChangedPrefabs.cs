@@ -59,7 +59,7 @@
             // Serialization is only needed if prefabs are edited before entering play mode and the domain will reload.
             // In all other cases, changes to prefabs will be reverted before a domain reload.
 #if UNITY_2019_3_OR_NEWER
-            if (EditorSettings.enterPlayModeOptions.HasFlag(EnterPlayModeOptions.DisableDomainReload))
+            if (EditorSettings.enterPlayModeOptionsEnabled && EditorSettings.enterPlayModeOptions.HasFlag(EnterPlayModeOptions.DisableDomainReload))
                 return;
 #endif
 
