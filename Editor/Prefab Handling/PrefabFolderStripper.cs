@@ -22,7 +22,12 @@
         public void OnPreprocessBuild(BuildReport report)
         {
             if (StripSettings.StripFoldersFromPrefabsInBuild)
-                StripFoldersFromDependentPrefabs();
+            {
+                using (AssetImportGrouper.Init())
+                {
+                    StripFoldersFromDependentPrefabs();
+                }
+            }
         }
 
         public void OnPostprocessBuild(BuildReport report)
@@ -42,7 +47,10 @@
             {
                 // Stripping folders from all prefabs in the project instead of only the ones referenced in the scenes
                 // because a prefab may be hot-swapped in Play Mode.
-                StripFoldersFromAllPrefabs();
+                using (AssetImportGrouper.Init())
+                {
+                    StripFoldersFromAllPrefabs();
+                }
             }
             else if (state == PlayModeStateChange.EnteredEditMode)
             {
@@ -124,6 +132,8 @@
             {
                 File.WriteAllText(path, content);
             }
+
+            AssetDatabase.Refresh();
         }
 
         /// <summary>

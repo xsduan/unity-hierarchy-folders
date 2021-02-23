@@ -11,20 +11,14 @@
 
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] _, string[] __, string[] ___)
         {
-            try
+            // Group imports into one to improve performance in case there are multiple prefabs that need a label change.
+            using (AssetImportGrouper.Init())
             {
-                // Group imports into one to improve performance in case there are multiple prefabs that need a label change.
-                AssetDatabase.StartAssetEditing();
-
                 foreach (string assetPath in importedAssets)
                 {
                     if (assetPath.EndsWith(".prefab"))
                         HandlePrefabLabels(assetPath);
                 }
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
             }
         }
 
