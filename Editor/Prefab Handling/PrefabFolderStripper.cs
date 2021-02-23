@@ -7,6 +7,7 @@
     using UnityEditor;
     using UnityEditor.Build;
     using UnityEditor.Build.Reporting;
+    using UnityEditor.Callbacks;
     using UnityEngine;
 
     [InitializeOnLoad]
@@ -36,6 +37,9 @@
                 RevertChanges();
         }
 
+        [DidReloadScripts]
+        private static void Log() => Debug.Log("scripts reload");
+
         private static void HandlePrefabsOnPlayMode(PlayModeStateChange state)
         {
             if ( ! StripSettings.StripFoldersFromPrefabsInPlayMode || StripSettings.PlayMode == StrippingMode.DoNothing)
@@ -52,7 +56,7 @@
                     StripFoldersFromAllPrefabs();
                 }
             }
-            else if (state == PlayModeStateChange.EnteredEditMode)
+            else if (state == PlayModeStateChange.ExitingPlayMode)
             {
                 RevertChanges();
             }
@@ -128,6 +132,8 @@
 
         private static void RevertChanges()
         {
+            Debug.Log("reverting changes");
+
             foreach ((string path, string content) in ChangedPrefabs.Instance)
             {
                 File.WriteAllText(path, content);
