@@ -74,7 +74,7 @@
             for (int i = 0; i < prefabsWithLabel.Length; i++)
             {
                 string path = prefabsWithLabel[i];
-                ChangedPrefabs.Instance[i] = (path, File.ReadAllText(path));
+                ChangedPrefabs.Instance[i] = (AssetDatabase.AssetPathToGUID(path), File.ReadAllText(path));
                 StripFoldersFromPrefab(path, StripSettings.Build);
             }
 
@@ -106,7 +106,7 @@
                 string guid = prefabGUIDs[i];
                 string path = AssetDatabase.GUIDToAssetPath(guid);
 
-                ChangedPrefabs.Instance[i] = (path, File.ReadAllText(path));
+                ChangedPrefabs.Instance[i] = (guid, File.ReadAllText(path));
                 StripFoldersFromPrefab(path, StripSettings.PlayMode);
             }
 
@@ -141,8 +141,15 @@
 
         private static void RevertChanges()
         {
-            foreach ((string path, string content) in ChangedPrefabs.Instance)
+            foreach ((string guid, string content) in ChangedPrefabs.Instance)
             {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+
+                // The asset might have been deleted in Play Mode. Additionally, event if the asset is deleted,
+                // AssetDatabase might still hold a reference to it, so a File.Exists check is needed.
+                if (string.IsNullOrEmpty(path) || ! File.Exists(path))
+                    continue;
+
                 File.WriteAllText(path, content);
             }
 

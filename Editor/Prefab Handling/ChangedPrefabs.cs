@@ -14,7 +14,7 @@
     {
         private const string KeyName = nameof(ChangedPrefabs);
 
-        [SerializeField] private string[] _paths;
+        [SerializeField] private string[] _guids;
         [SerializeField] private string[] _contents;
 
         private static ChangedPrefabs _instance;
@@ -35,12 +35,12 @@
             }
         }
 
-        public (string path, string content) this[int index]
+        public (string guid, string content) this[int index]
         {
-            get => (_paths[index], _contents[index]);
+            get => (_guids[index], _contents[index]);
             set
             {
-                _paths[index] = value.path;
+                _guids[index] = value.guid;
                 _contents[index] = value.content;
             }
         }
@@ -49,7 +49,7 @@
         {
             _instance = new ChangedPrefabs
             {
-                _paths = new string[length],
+                _guids = new string[length],
                 _contents = new string[length]
             };
         }
@@ -101,7 +101,7 @@
 
             public bool MoveNext()
             {
-                return ++_index < Instance._paths.Length;
+                return ++_index < Instance._guids.Length;
             }
 
             public void Reset() => _index = 0;
