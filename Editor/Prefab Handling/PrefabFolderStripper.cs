@@ -8,13 +8,10 @@
     using UnityEditor.Build;
     using UnityEditor.Build.Reporting;
     using UnityEngine;
-    using Object = UnityEngine.Object;
 
     [InitializeOnLoad]
     public class PrefabFolderStripper : IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
-        private static (string path, string assetContent)[] _changedPrefabs;
-
         static PrefabFolderStripper()
         {
             EditorApplication.playModeStateChanged += HandlePrefabsOnPlayMode;
@@ -39,10 +36,12 @@
             if ( ! StripSettings.StripFoldersFromPrefabsInPlayMode || StripSettings.PlayMode == StrippingMode.DoNothing)
                 return;
 
+            // Calling it not in EnteredPlayMode because scripts may instantiate prefabs in Awake or OnEnable
+            // which happens before EnteredPlayMode.
             if (state == PlayModeStateChange.ExitingEditMode)
             {
                 // Stripping folders from all prefabs in the project instead of only the ones referenced in the scenes
-                // because a prefab can be hot-swapped in Play Mode.
+                // because a prefab may be hot-swapped in Play Mode.
                 StripFoldersFromAllPrefabs();
             }
             else if (state == PlayModeStateChange.EnteredEditMode)
@@ -60,21 +59,23 @@
                     AssetDatabase.GetLabels(GetAssetForLabel(path)).Contains(LabelHandler.FolderPrefabLabel))
                 .ToArray();
 
-            _changedPrefabs = new (string, string)[prefabsWithLabel.Length];
+            ChangedPrefabs.Initialize(prefabsWithLabel.Length);
 
             for (int i = 0; i < prefabsWithLabel.Length; i++)
             {
                 string path = prefabsWithLabel[i];
-                _changedPrefabs[i] = (path, File.ReadAllText(path));
+                ChangedPrefabs.Instance[i] = (path, File.ReadAllText(path));
                 StripFoldersFromPrefab(path, StripSettings.Build);
             }
+
+            // Serialization of ChangedPrefabs is not needed here because domain doesn't reload before changes are reverted.
         }
 
         private static
 #if UNITY_2020_1_OR_NEWER
             GUID
 #else
-            Object
+            UnityEngine.Object
 #endif
             GetAssetForLabel(string path)
         {
@@ -88,16 +89,20 @@
         private static void StripFoldersFromAllPrefabs()
         {
             var prefabGUIDs = AssetDatabase.FindAssets($"l: {LabelHandler.FolderPrefabLabel}");
-            _changedPrefabs = new (string, string)[prefabGUIDs.Length];
+            ChangedPrefabs.Initialize(prefabGUIDs.Length);
 
             for (int i = 0; i < prefabGUIDs.Length; i++)
             {
                 string guid = prefabGUIDs[i];
                 string path = AssetDatabase.GUIDToAssetPath(guid);
 
-                _changedPrefabs[i] = (path, File.ReadAllText(path));
+                ChangedPrefabs.Instance[i] = (path, File.ReadAllText(path));
                 StripFoldersFromPrefab(path, StripSettings.PlayMode);
             }
+
+            // If domain reload is enabled in Play Mode Options, serialization of the changed prefabs is necessary
+            // so that changes can be reverted after leaving play mode.
+            ChangedPrefabs.SerializeIfNeeded();
         }
 
         private static void StripFoldersFromPrefab(string prefabPath, StrippingMode strippingMode)
@@ -115,7 +120,7 @@
 
         private static void RevertChanges()
         {
-            foreach ((string path, string content) in _changedPrefabs)
+            foreach ((string path, string content) in ChangedPrefabs.Instance)
             {
                 File.WriteAllText(path, content);
             }
