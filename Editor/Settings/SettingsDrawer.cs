@@ -48,10 +48,13 @@
 
             EditorGUILayout.Space(EditorGUIUtility.singleLineHeight);
 
-            EditorGUILayout.HelpBox(
-                "If you notice that entering play mode takes too long, you can try disabling this option. " +
-                "Folders will not be stripped from prefabs that are instantiated at runtime, but if performance in " +
-                "Play Mode does not matter, you will be fine.", MessageType.Warning);
+            if (StripSettings.StripFoldersFromPrefabsInPlayMode)
+            {
+                EditorGUILayout.HelpBox(
+                    "If you notice that entering play mode takes too long, you can try disabling this option. " +
+                    "Folders will not be stripped from prefabs that are instantiated at runtime, but if performance in " +
+                    "Play Mode does not matter, you will be fine.", MessageType.Info);
+            }
 
             using (new TemporaryLabelWidth(230f))
             {
