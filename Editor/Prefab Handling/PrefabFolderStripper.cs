@@ -38,9 +38,6 @@
                 RevertChanges();
         }
 
-        [DidReloadScripts]
-        private static void Log() => Debug.Log("scripts reload");
-
         private static void HandlePrefabsOnPlayMode(PlayModeStateChange state)
         {
             if ( ! StripSettings.StripFoldersFromPrefabsInPlayMode || StripSettings.PlayMode == StrippingMode.DoNothing)
@@ -144,8 +141,6 @@
 
         private static void RevertChanges()
         {
-            Debug.Log("reverting changes");
-
             foreach ((string path, string content) in ChangedPrefabs.Instance)
             {
                 File.WriteAllText(path, content);
