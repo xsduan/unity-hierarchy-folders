@@ -9,6 +9,7 @@
     using UnityEditor.Build.Reporting;
     using UnityEditor.Callbacks;
     using UnityEngine;
+    using Object = UnityEngine.Object;
 
     [InitializeOnLoad]
     public class PrefabFolderStripper : IPreprocessBuildWithReport, IPostprocessBuildWithReport
@@ -125,7 +126,18 @@
 
                 foreach (Folder folder in folders)
                 {
-                    folder.Flatten(strippingMode, StripSettings.CapitalizeName);
+                    if (folder.gameObject == temp.PrefabContentsRoot)
+                    {
+                        Debug.LogWarning(
+                            $"Hierarchy will not flatten for {prefabPath} because its root is a folder. " +
+                            "It's advised to make the root an empty game object.");
+
+                        Object.DestroyImmediate(folder);
+                    }
+                    else
+                    {
+                        folder.Flatten(strippingMode, StripSettings.CapitalizeName);
+                    }
                 }
             }
         }
