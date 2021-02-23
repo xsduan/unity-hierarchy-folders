@@ -89,7 +89,7 @@
                 nameof(_stripFoldersFromPrefabsInPlayMode), true, SettingsScope.User);
 
             _stripFoldersFromPrefabsInBuild = new UserSetting<bool>(_instance,
-                nameof(_stripFoldersFromPrefabsInPlayMode), true, SettingsScope.User);
+                nameof(_stripFoldersFromPrefabsInBuild), true, SettingsScope.User);
         }
     }
 }
