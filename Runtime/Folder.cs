@@ -222,7 +222,12 @@ namespace UnityHierarchyFolders.Runtime
         {
             if (strippingMode == StrippingMode.ReplaceWithSeparator)
             {
-                name = $"--- {(capitalizeFolderName ? name.ToUpper() : name)} ---";
+                // If the folder name is already a separator, don't change it.
+                if ( ! name.StartsWith("--- "))
+                {
+                    name = $"--- {(capitalizeFolderName ? name.ToUpper() : name)} ---";
+                }
+
                 return;
             }
 
