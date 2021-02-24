@@ -1,9 +1,10 @@
 {
     "name": "UnityHierarchyFolders.Editor",
+    "rootNamespace": "",
     "references": [
-        "UnityHierarchyFolders.Runtime"
+        "UnityHierarchyFolders.Runtime",
+        "Unity.Settings.Editor"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [
         "Editor"
     ],
@@ -12,5 +13,7 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
