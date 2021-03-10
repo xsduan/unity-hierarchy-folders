@@ -13,7 +13,7 @@ namespace UnityHierarchyFolders.Editor
         public override bool RequiresConstantRepaint() => true;
         public override void OnInspectorGUI()
         {
-            this._expanded = EditorGUILayout.Foldout(this._expanded, "Icon Color");
+            this._expanded = EditorGUILayout.Foldout(this._expanded, "Icon Color", true);
             if (this._expanded) { this.RenderColorPicker(); }
         }
 
