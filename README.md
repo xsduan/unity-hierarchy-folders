@@ -101,4 +101,5 @@ something out.
 The hope is to have it be a native component like it is in Unreal. (Not
 necessarily this one specifically, but I'm not opposed to it ;) I've seen paid
 components for this and frankly for the effort it took me it's a bit of a
-rip-off to pay any amount for it.
+rip-off to pay any amount for it. [Vote for this feature on the Unity
+Productboard if you agree!](https://portal.productboard.com/ca1chnbwvzw1eg5yjc5rijnj/c/392-hierarchy-folders)
