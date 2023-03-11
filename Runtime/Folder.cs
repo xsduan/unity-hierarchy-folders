@@ -168,9 +168,9 @@ namespace UnityHierarchyFolders.Runtime
         /// </summary>
         private void Update()
         {
-            this.transform.position = Vector3.zero;
-            this.transform.rotation = Quaternion.identity;
-            this.transform.localScale = new Vector3(1, 1, 1);
+            this.transform.localPosition = Vector3.zero;
+            this.transform.localRotation = Quaternion.identity;
+            this.transform.localScale = Vector3.one;
 
 #if UNITY_EDITOR
             if (!Application.IsPlaying(this.gameObject))
