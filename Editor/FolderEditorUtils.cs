@@ -21,6 +21,7 @@ namespace UnityHierarchyFolders.Editor
 
             GameObjectUtility.SetParentAndAlign(obj, (GameObject)command.context);
             Undo.RegisterCreatedObjectUndo(obj, _actionName);
+            Selection.activeObject = obj;
         }
     }
 
