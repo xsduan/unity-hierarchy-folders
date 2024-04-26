@@ -78,18 +78,18 @@
             _instance = new Settings(PackageName);
 
             _playModeSetting = new UserSetting<StrippingMode>(_instance, nameof(_playModeSetting),
-                StrippingMode.PrependWithFolderName, SettingsScope.User);
+                StrippingMode.PrependWithFolderName, SettingsScope.Project);
 
             _buildSetting = new UserSetting<StrippingMode>(_instance, nameof(_buildSetting),
-                StrippingMode.PrependWithFolderName, SettingsScope.User);
+                StrippingMode.PrependWithFolderName, SettingsScope.Project);
 
-            _capitalizeName = new UserSetting<bool>(_instance, nameof(_capitalizeName), true, SettingsScope.User);
+            _capitalizeName = new UserSetting<bool>(_instance, nameof(_capitalizeName), true, SettingsScope.Project);
 
             _stripFoldersFromPrefabsInPlayMode = new UserSetting<bool>(_instance,
-                nameof(_stripFoldersFromPrefabsInPlayMode), true, SettingsScope.User);
+                nameof(_stripFoldersFromPrefabsInPlayMode), true, SettingsScope.Project);
 
             _stripFoldersFromPrefabsInBuild = new UserSetting<bool>(_instance,
-                nameof(_stripFoldersFromPrefabsInBuild), true, SettingsScope.User);
+                nameof(_stripFoldersFromPrefabsInBuild), true, SettingsScope.Project);
         }
     }
 }
