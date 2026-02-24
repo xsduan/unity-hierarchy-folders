@@ -1,13 +1,11 @@
-#if UNITY_2019_1_OR_NEWER
+﻿#if UNITY_2019_1_OR_NEWER
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
-using UnityEditor.IMGUI.Controls;
 using UnityEngine;
-using UnityHierarchyFolders.Runtime;
+using UnityHierarchyFolders.Runtime; // Folder.TryGetIconIndex
 using Object = UnityEngine.Object;
 
 namespace UnityHierarchyFolders.Editor
@@ -21,51 +19,134 @@ namespace UnityHierarchyFolders.Editor
 #endif
         private const string _closedFolderPrefix = "Folder";
 
+        // ===== Palette 1D =====
+        // Indexing convention used here:
+        // - storedIndex == 0  => default (no color)
+        // - storedIndex 1..N  => colors[storedIndex - 1]
+        public static readonly Color[] IconColors =
+        {
+            new Color(0.91f, 0.91f, 0.91f), // Gray
+            new Color(0.98f, 0.80f, 0.27f), // Yellow
+            new Color(0.50f, 0.79f, 0.98f), // Blue
+            new Color(0.63f, 0.90f, 0.68f), // Green
+            new Color(0.96f, 0.62f, 0.62f), // Red
+        };
+        public static int IconCount => IconColors.Length;
+
+        // ===== State =====
         private static Texture2D _openFolderTexture;
         private static Texture2D _closedFolderTexture;
         private static Texture2D _openFolderSelectedTexture;
         private static Texture2D _closedFolderSelectedTexture;
 
+        // Pre-tinted variants (length == IconCount)
+        static Texture2D[] _openVariants;
+        static Texture2D[] _closedVariants;
+
         private static bool _isInitialized;
         private static bool _hasProcessedFrame = true;
 
-        // Reflected members
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Special naming scheme")]
-        private static PropertyInfo prop_sceneHierarchy;
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Special naming scheme")]
-        private static PropertyInfo prop_treeView;
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Special naming scheme")]
-        private static PropertyInfo prop_data;
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Special naming scheme")]
-        private static PropertyInfo prop_selectedIcon;
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Special naming scheme")]
-        private static PropertyInfo prop_objectPPTR;
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Special naming scheme")]
-        private static MethodInfo meth_getRows;
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Special naming scheme")]
-        private static MethodInfo meth_isExpanded;
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Special naming scheme")]
+        // Reflected members we actually need
         private static MethodInfo meth_getAllSceneHierarchyWindows;
+        private static PropertyInfo prop_sceneHierarchy;
 
-        private static (Texture2D open, Texture2D closed)[] _coloredFolderIcons;
-        public static (Texture2D open, Texture2D closed) ColoredFolderIcons(int i) => _coloredFolderIcons[i];
+        // Common flags
+        const BindingFlags F =
+            BindingFlags.Instance | BindingFlags.Static |
+            BindingFlags.Public | BindingFlags.NonPublic |
+            BindingFlags.FlattenHierarchy;
 
-        public static int IconColumnCount => IconColors.GetLength(0);
-        public static int IconRowCount => IconColors.GetLength(1);
+        // ===== Helpers =====
+        static PropertyInfo GetPropertyExact(Type type, string name, BindingFlags flags, Type returnType)
+        {
+            var pi = type.GetProperty(name, flags, null, returnType, Type.EmptyTypes, null);
+            if (pi != null) return pi;
 
-        private static readonly Color[,] IconColors = {
-            {new Color(0.09f, 0.57f, 0.82f), new Color(0.05f, 0.34f, 0.48f),},
-            {new Color(0.09f, 0.67f, 0.67f), new Color(0.05f, 0.42f, 0.42f),},
-            {new Color(0.23f, 0.73f, 0.36f), new Color(0.15f, 0.41f, 0.22f),},
-            {new Color(0.55f, 0.35f, 0.71f), new Color(0.35f, 0.24f, 0.44f),},
-            {new Color(0.78f, 0.27f, 0.55f), new Color(0.52f, 0.15f, 0.35f),},
-            {new Color(0.80f, 0.66f, 0.10f), new Color(0.56f, 0.46f, 0.02f),},
-            {new Color(0.91f, 0.49f, 0.13f), new Color(0.62f, 0.33f, 0.07f),},
-            {new Color(0.91f, 0.30f, 0.24f), new Color(0.77f, 0.15f, 0.09f),},
-            {new Color(0.35f, 0.49f, 0.63f), new Color(0.24f, 0.33f, 0.42f),},
-        };
+            return type.GetProperties(flags)
+                       .FirstOrDefault(p => p.Name == name &&
+                                            p.PropertyType == returnType &&
+                                            p.GetIndexParameters().Length == 0);
+        }
 
+        static PropertyInfo GetPropertyByName(Type t, string name, BindingFlags flags)
+        {
+            return t.GetProperties(flags)
+                    .FirstOrDefault(p => p.Name == name && p.GetIndexParameters().Length == 0);
+        }
+
+        // Cheap CPU tint; builds readable textures once
+        static Texture2D Tint(Texture2D src, Color tint)
+        {
+            if (src == null) return null;
+            var w = src.width; var h = src.height;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false)
+            {
+                filterMode = src.filterMode,
+                wrapMode = src.wrapMode
+            };
+            // Copy pixels
+            var tmp = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32);
+            Graphics.Blit(src, tmp);
+            var prev = RenderTexture.active;
+            RenderTexture.active = tmp;
+            tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            tex.Apply(false);
+            RenderTexture.active = prev;
+            RenderTexture.ReleaseTemporary(tmp);
+
+            var px = tex.GetPixels32();
+            // multiply RGB by tint, keep original alpha
+            byte tr = (byte)Mathf.RoundToInt(Mathf.Clamp01(tint.r) * 255f);
+            byte tg = (byte)Mathf.RoundToInt(Mathf.Clamp01(tint.g) * 255f);
+            byte tb = (byte)Mathf.RoundToInt(Mathf.Clamp01(tint.b) * 255f);
+            for (int i = 0; i < px.Length; i++)
+            {
+                var p = px[i];
+                px[i] = new Color32(
+                    (byte)(p.r * tr / 255),
+                    (byte)(p.g * tg / 255),
+                    (byte)(p.b * tb / 255),
+                    p.a);
+            }
+            tex.SetPixels32(px);
+            tex.Apply(false);
+            tex.name = src.name + "_tinted";
+            return tex;
+        }
+
+        static void EnsureVariantsBuilt()
+        {
+            if (_openVariants != null && _closedVariants != null) return;
+            if (_openFolderTexture == null || _closedFolderTexture == null) return;
+
+            int n = IconCount;
+            _openVariants = new Texture2D[n];
+            _closedVariants = new Texture2D[n];
+
+            for (int i = 0; i < n; i++)
+            {
+                var c = IconColors[i];
+                _openVariants[i] = Tint(_openFolderTexture, c);
+                _closedVariants[i] = Tint(_closedFolderTexture, c);
+            }
+        }
+
+        // Map stored index to textures (0 = default, 1..N = colored)
+        static void GetIcons(int storedIndex, out Texture2D openTex, out Texture2D closedTex)
+        {
+            openTex = _openFolderTexture;
+            closedTex = _closedFolderTexture;
+
+            EnsureVariantsBuilt();
+            if (_openVariants == null || _closedVariants == null) return;
+
+            if (storedIndex <= 0) return;          // default
+            int i = Mathf.Clamp(storedIndex - 1, 0, IconCount - 1);
+            if (_openVariants[i] != null) openTex = _openVariants[i];
+            if (_closedVariants[i] != null) closedTex = _closedVariants[i];
+        }
+
+        // ===== Entry points =====
         [InitializeOnLoadMethod]
         private static void Startup()
         {
@@ -73,98 +154,151 @@ namespace UnityHierarchyFolders.Editor
             EditorApplication.hierarchyWindowItemOnGUI += RefreshFolderIcons;
         }
 
-        private static void InitIfNeeded()
+        public static void ForceRepaint()
         {
-            if (_isInitialized) { return; }
+            InitIfNeeded();
+            EditorApplication.RepaintHierarchyWindow();
+        }
 
-            _openFolderTexture = (Texture2D)EditorGUIUtility.IconContent($"{_openedFolderPrefix} Icon").image;
-            _closedFolderTexture = (Texture2D)EditorGUIUtility.IconContent($"{_closedFolderPrefix} Icon").image;
+        static void InitIfNeeded()
+        {
+            if (_isInitialized) return;
 
-            // We could use the actual white folder icons but I prefer the look of the tinted white folder icon
-            // To use the actual white version:
-            // texture = (Texture2D) EditorGUIUtility.IconContent($"{OpenedFolderPrefix | ClosedFolderPrefix} On Icon").image;
-            _openFolderSelectedTexture = TextureHelper.GetWhiteTexture(_openFolderTexture, $"{_openedFolderPrefix} Icon White");
-            _closedFolderSelectedTexture = TextureHelper.GetWhiteTexture(_closedFolderTexture, $"{_closedFolderPrefix} Icon White");
-
-            _coloredFolderIcons = new (Texture2D, Texture2D)[] { (_openFolderTexture, _closedFolderTexture) };
-
-            for (int row = 0; row < IconRowCount; row++)
+            try
             {
-                for (int column = 0; column < IconColumnCount; column++)
+                var unityEditorAsm = typeof(UnityEditor.Editor).Assembly;
+                var type_sceneHierarchyWindow = unityEditorAsm.GetType("UnityEditor.SceneHierarchyWindow");
+                if (type_sceneHierarchyWindow == null)
                 {
-                    int index = 1 + column + row * IconColumnCount;
-                    var color = IconColors[column, row];
-
-                    var openFolderIcon = TextureHelper.GetTintedTexture(_openFolderSelectedTexture,
-                        color, $"{_openFolderSelectedTexture.name} {index}");
-                    var closedFolderIcon = TextureHelper.GetTintedTexture(_closedFolderSelectedTexture,
-                        color, $"{_closedFolderSelectedTexture.name} {index}");
-
-                    ArrayUtility.Add(ref _coloredFolderIcons, (openFolderIcon, closedFolderIcon));
+                    _isInitialized = true;
+                    return;
                 }
+
+                // Exact 0-arg overload
+                meth_getAllSceneHierarchyWindows =
+                    type_sceneHierarchyWindow.GetMethod("GetAllSceneHierarchyWindows", F, null, Type.EmptyTypes, null)
+                    ?? type_sceneHierarchyWindow.GetMethods(F).FirstOrDefault(m => m.Name == "GetAllSceneHierarchyWindows" && m.GetParameters().Length == 0);
+
+                var type_sceneHierarchy =
+                    unityEditorAsm.GetType("UnityEditor.SceneHierarchy")
+                    ?? unityEditorAsm.GetType("UnityEditor.IMGUI.Controls.SceneHierarchy");
+
+                prop_sceneHierarchy = (type_sceneHierarchy != null)
+                    ? GetPropertyExact(type_sceneHierarchyWindow, "sceneHierarchy", F, type_sceneHierarchy)
+                    : GetPropertyByName(type_sceneHierarchyWindow, "sceneHierarchy", F);
+
+                if (meth_getAllSceneHierarchyWindows == null || prop_sceneHierarchy == null)
+                {
+                    _isInitialized = true;
+                    return;
+                }
+
+                _isInitialized = true;
             }
-
-            // reflection
-
-            const BindingFlags BindingAll = BindingFlags.Public
-              | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-
-            var assembly = typeof(SceneView).Assembly;
-
-            var type_sceneHierarchyWindow = assembly.GetType("UnityEditor.SceneHierarchyWindow");
-            meth_getAllSceneHierarchyWindows = type_sceneHierarchyWindow.GetMethod("GetAllSceneHierarchyWindows", BindingAll);
-            prop_sceneHierarchy = type_sceneHierarchyWindow.GetProperty("sceneHierarchy");
-
-            var type_sceneHierarchy = assembly.GetType("UnityEditor.SceneHierarchy");
-            prop_treeView = type_sceneHierarchy.GetProperty("treeView", BindingAll);
-
-            var type_treeViewController = assembly.GetType("UnityEditor.IMGUI.Controls.TreeViewController");
-            prop_data = type_treeViewController.GetProperty("data", BindingAll);
-
-            var type_iTreeViewDataSource = assembly.GetType("UnityEditor.IMGUI.Controls.ITreeViewDataSource");
-            meth_getRows = type_iTreeViewDataSource.GetMethod("GetRows");
-            meth_isExpanded = type_iTreeViewDataSource.GetMethod("IsExpanded", new Type[] { typeof(TreeViewItem) });
-
-            var type_gameObjectTreeViewItem = assembly.GetType("UnityEditor.GameObjectTreeViewItem");
-            prop_selectedIcon = type_gameObjectTreeViewItem.GetProperty("selectedIcon", BindingAll);
-            prop_objectPPTR = type_gameObjectTreeViewItem.GetProperty("objectPPTR", BindingAll);
-
-            _isInitialized = true;
+            catch
+            {
+                _isInitialized = true;
+            }
         }
 
         private static void ResetFolderIcons()
         {
             InitIfNeeded();
-            _hasProcessedFrame = false;
+
+            if (_openFolderTexture == null || _closedFolderTexture == null)
+            {
+#if UNITY_2020_1_OR_NEWER
+                _openFolderTexture = EditorGUIUtility.IconContent("FolderOpened Icon").image as Texture2D;
+#else
+                _openFolderTexture   = EditorGUIUtility.IconContent("OpenedFolder Icon").image as Texture2D;
+#endif
+                _closedFolderTexture = EditorGUIUtility.IconContent("Folder Icon").image as Texture2D;
+
+                _openFolderSelectedTexture = _openFolderTexture;
+                _closedFolderSelectedTexture = _closedFolderTexture;
+
+                // Rebuild variants next time GetIcons is called
+                _openVariants = _closedVariants = null;
+            }
+
         }
 
         private static void RefreshFolderIcons(int instanceid, Rect selectionrect)
         {
-            if (_hasProcessedFrame) { return; }
 
-            _hasProcessedFrame = true;
+            if (meth_getAllSceneHierarchyWindows == null || prop_sceneHierarchy == null)
+                return;
 
-            var windows = ((IEnumerable)meth_getAllSceneHierarchyWindows.Invoke(null, Array.Empty<object>())).Cast<EditorWindow>().ToList();
-            foreach (var window in windows)
+            try
             {
-                object sceneHierarchy = prop_sceneHierarchy.GetValue(window);
-                object treeView = prop_treeView.GetValue(sceneHierarchy);
-                object data = prop_data.GetValue(treeView);
+                var windowsObj = meth_getAllSceneHierarchyWindows.Invoke(null, Array.Empty<object>());
+                if (windowsObj is not IEnumerable windows) return;
 
-                var rows = (IList<TreeViewItem>)meth_getRows.Invoke(data, Array.Empty<object>());
-                foreach (var item in rows)
+                foreach (var w in windows)
                 {
-                    var itemObject = (Object)prop_objectPPTR.GetValue(item);
-                    if (!Folder.TryGetIconIndex(itemObject, out int colorIndex)) { continue; }
+                    if (w is not EditorWindow window) continue;
 
-                    bool isExpanded = (bool)meth_isExpanded.Invoke(data, new object[] { item });
+                    var sceneHierarchy = prop_sceneHierarchy.GetValue(window);
+                    if (sceneHierarchy == null) continue;
 
-                    var icons = ColoredFolderIcons(Mathf.Clamp(colorIndex, 0, _coloredFolderIcons.Length - 1));
+                    // Resolve from instances (generic-safe)
+                    var shType = sceneHierarchy.GetType();
+                    var piTree = GetPropertyByName(shType, "treeView", F);
+                    var treeView = piTree?.GetValue(sceneHierarchy);
+                    if (treeView == null) continue;
 
-                    item.icon = isExpanded ? icons.open : icons.closed;
+                    var tvType = treeView.GetType();
+                    var piData = GetPropertyByName(tvType, "data", F);
+                    var data = piData?.GetValue(treeView);
+                    if (data == null) continue;
 
-                    prop_selectedIcon.SetValue(item, isExpanded ? _openFolderSelectedTexture : _closedFolderSelectedTexture);
+                    var dataType = data.GetType();
+                    var miGetRows = dataType.GetMethod("GetRows", F, null, Type.EmptyTypes, null)
+                                 ?? dataType.GetMethods(F).FirstOrDefault(m => m.Name == "GetRows" && m.GetParameters().Length == 0);
+                    if (miGetRows == null) continue;
+
+                    var miIsExpanded = dataType.GetMethods(F).FirstOrDefault(m => m.Name == "IsExpanded" && m.GetParameters().Length == 1);
+
+                    var rowsObj = miGetRows.Invoke(data, Array.Empty<object>()) as IEnumerable;
+                    if (rowsObj == null) continue;
+
+                    foreach (var item in rowsObj)
+                    {
+                        if (item == null) continue;
+                        var itemType = item.GetType();
+
+                        var piObject = GetPropertyExact(itemType, "objectPPTR", F, typeof(Object))
+                                    ?? GetPropertyByName(itemType, "objectPPTR", F);
+                        var itemObject = (Object)piObject?.GetValue(item);
+                        if (itemObject == null) continue;
+
+                        if (!Folder.TryGetIconIndex(itemObject, out int colorIndex))
+                            continue; // no colored icon requested
+
+                        bool isExpanded = false;
+                        if (miIsExpanded != null)
+                        {
+                            try { isExpanded = (bool)miIsExpanded.Invoke(data, new object[] { item }); }
+                            catch { isExpanded = false; }
+                        }
+
+                        GetIcons(colorIndex+1, out var openTex, out var closedTex);
+
+                        var piIcon = GetPropertyExact(itemType, "icon", F, typeof(Texture2D))
+                                  ?? GetPropertyByName(itemType, "icon", F);
+                        if (piIcon != null)
+                            piIcon.SetValue(item, isExpanded ? openTex : closedTex);
+
+                        var piSelIcon = GetPropertyExact(itemType, "selectedIcon", F, typeof(Texture2D))
+                                      ?? GetPropertyByName(itemType, "selectedIcon", F);
+                        if (piSelIcon != null)
+                            piSelIcon.SetValue(item, isExpanded ? _openFolderSelectedTexture : _closedFolderSelectedTexture);
+                    }
                 }
+            }
+            catch
+            {
+                // swallow to avoid IMGUI clip imbalance
             }
         }
     }

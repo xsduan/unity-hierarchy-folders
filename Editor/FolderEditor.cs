@@ -1,4 +1,5 @@
 ﻿#if UNITY_2019_1_OR_NEWER
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityHierarchyFolders.Runtime;
@@ -10,68 +11,55 @@ namespace UnityHierarchyFolders.Editor
     {
         private bool _expanded = false;
 
+
+        static readonly string[] s_DefaultIconColorNames =
+            new[] { "Default", "Yellow", "Blue", "Green", "Red" };
+
         public override bool RequiresConstantRepaint() => true;
         public override void OnInspectorGUI()
         {
             this._expanded = EditorGUILayout.Foldout(this._expanded, "Icon Color", true);
             if (this._expanded) { this.RenderColorPicker(); }
         }
-
-        private void RenderColorPicker()
+        void RenderColorPicker()
         {
-            var colorIndexProperty = this.serializedObject.FindProperty("_colorIndex");
+            serializedObject.Update();
 
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
+            var colors = HierarchyFolderIcon.IconColors;
+            var names = s_DefaultIconColorNames;
+            if (names == null || names.Length != colors.Length)
+                names = Enumerable.Range(0, colors.Length).Select(i => $"Color {i}").ToArray();
 
-            float buttonSize = 25f;
-
-            var gridRect = EditorGUILayout.GetControlRect(false, buttonSize * HierarchyFolderIcon.IconRowCount,
-                GUILayout.Width(buttonSize * HierarchyFolderIcon.IconColumnCount));
-
-            int currentIndex = colorIndexProperty.intValue;
-            for (int row = 0; row < HierarchyFolderIcon.IconRowCount; row++)
+            // Use the actual backing field name
+            var pIndex = serializedObject.FindProperty("_colorIndex");
+            if (pIndex == null)
             {
-                for (int column = 0; column < HierarchyFolderIcon.IconColumnCount; column++)
-                {
-                    int index = 1 + column + row * HierarchyFolderIcon.IconColumnCount;
-                    float width = gridRect.width / HierarchyFolderIcon.IconColumnCount;
-                    float height = gridRect.height / HierarchyFolderIcon.IconRowCount;
-                    var rect = new Rect(gridRect.x + width * column, gridRect.y + height * row, width, height);
-                    (var openIcon, var closeIcon) = HierarchyFolderIcon.ColoredFolderIcons(index);
-
-                    if (Event.current.type == EventType.Repaint)
-                    {
-                        if (index == currentIndex)
-                        {
-                            GUIStyle hover = "TV Selection";
-                            hover.Draw(rect, false, false, false, false);
-                        }
-                        else if (rect.Contains(Event.current.mousePosition))
-                        {
-                            GUI.backgroundColor = new Color(.7f, .7f, .7f, 1f);
-                            GUIStyle white = "WhiteBackground";
-                            white.Draw(rect, false, false, true, false);
-                            GUI.backgroundColor = Color.white;
-                        }
-                    }
-
-                    if (GUI.Button(rect, currentIndex == index ? openIcon : closeIcon, EditorStyles.label))
-                    {
-                        Undo.RecordObject(this.target, "Set Folder Color");
-                        colorIndexProperty.intValue = currentIndex == index ? 0 : index;
-                        this.serializedObject.ApplyModifiedProperties();
-                        EditorApplication.RepaintHierarchyWindow();
-                        GUIUtility.ExitGUI();
-                    }
-                }
+                EditorGUILayout.HelpBox("Missing '_colorIndex' property.", MessageType.Warning);
+                serializedObject.ApplyModifiedProperties();
+                return;
             }
 
-            GUILayout.FlexibleSpace();
-            EditorGUILayout.EndHorizontal();
+            pIndex.intValue = Mathf.Clamp(pIndex.intValue, 0, colors.Length - 1);
 
-            GUILayout.Space(10f);
+            EditorGUI.BeginChangeCheck();
+            int newIndex = EditorGUILayout.Popup("Folder Color", pIndex.intValue , names);
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(target, "Change Folder Color");
+                pIndex.intValue = newIndex;
+                serializedObject.ApplyModifiedProperties();
+                EditorUtility.SetDirty(target);
+                // Force repaint so the icon updates immediately
+                HierarchyFolderIcon.ForceRepaint();
+                return; // avoid drawing preview with stale value this frame
+            }
+
+            var previewRect = GUILayoutUtility.GetRect(18, 18, GUILayout.ExpandWidth(false));
+            EditorGUI.DrawRect(previewRect, colors[pIndex.intValue]);
+
+            serializedObject.ApplyModifiedProperties();
         }
+
     }
 }
 #endif
