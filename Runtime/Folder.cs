@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEditor;
 #endif
 using UnityEngine;
@@ -75,6 +76,9 @@ namespace UnityHierarchyFolders.Runtime
 
 #if UNITY_6000_5_OR_NEWER
         private static readonly Dictionary<EntityId, int> s_Folders = new Dictionary<EntityId, int>();
+        private static readonly Dictionary<int, UnityEngine.Object> s_HierarchyObjectCache = new Dictionary<int, UnityEngine.Object>();
+        private static readonly object[] s_InstanceIdToObjectArguments = new object[1];
+        private static MethodInfo s_InstanceIdToObjectMethod;
 #else
         private static readonly Dictionary<int, int> s_Folders = new Dictionary<int, int>();
 #endif
@@ -146,7 +150,11 @@ namespace UnityHierarchyFolders.Runtime
         /// </summary>
         public static bool TryGetIconIndex(int hierarchyInstanceId, out int index)
         {
+#if UNITY_6000_5_OR_NEWER
+            UnityEngine.Object obj = ResolveHierarchyObject(hierarchyInstanceId);
+#else
             UnityEngine.Object obj = EditorUtility.InstanceIDToObject(hierarchyInstanceId);
+#endif
             return TryGetIconIndex(obj, out index);
         }
 
@@ -155,6 +163,46 @@ namespace UnityHierarchyFolders.Runtime
 
 #if UNITY_6000_5_OR_NEWER
         private static EntityId GetObjectKey(UnityEngine.Object obj) => obj.GetEntityId();
+
+        private static UnityEngine.Object ResolveHierarchyObject(int hierarchyInstanceId)
+        {
+            if (s_HierarchyObjectCache.TryGetValue(hierarchyInstanceId, out UnityEngine.Object cachedObject) && cachedObject != null)
+                return cachedObject;
+
+            // Unity 6.5's public conversion API uses EntityId. The hierarchy callback is
+            // still int-based in current editor callbacks, so first try the raw EntityId path.
+            EntityId entityId = EntityId.FromULong(unchecked((ulong)(uint)hierarchyInstanceId));
+            UnityEngine.Object obj = EditorUtility.EntityIdToObject(entityId);
+
+            // Fallback for int-based hierarchy callbacks while avoiding direct compile-time
+            // usage of the obsolete EditorUtility.InstanceIDToObject API.
+            if (obj == null)
+                obj = InstanceIdToObjectReflective(hierarchyInstanceId);
+
+            if (obj != null)
+                s_HierarchyObjectCache[hierarchyInstanceId] = obj;
+
+            return obj;
+        }
+
+        private static UnityEngine.Object InstanceIdToObjectReflective(int instanceId)
+        {
+            if (s_InstanceIdToObjectMethod == null)
+            {
+                s_InstanceIdToObjectMethod = typeof(EditorUtility).GetMethod(
+                    "InstanceIDToObject",
+                    BindingFlags.Public | BindingFlags.Static,
+                    null,
+                    new[] { typeof(int) },
+                    null);
+            }
+
+            if (s_InstanceIdToObjectMethod == null)
+                return null;
+
+            s_InstanceIdToObjectArguments[0] = instanceId;
+            return s_InstanceIdToObjectMethod.Invoke(null, s_InstanceIdToObjectArguments) as UnityEngine.Object;
+        }
 #else
         private static int GetObjectKey(UnityEngine.Object obj) => obj.GetInstanceID();
 #endif
