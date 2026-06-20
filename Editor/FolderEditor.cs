@@ -1,5 +1,4 @@
-﻿#if UNITY_2019_1_OR_NEWER
-using System.Linq;
+#if UNITY_2019_1_OR_NEWER
 using UnityEditor;
 using UnityEngine;
 using UnityHierarchyFolders.Runtime;
@@ -9,29 +8,28 @@ namespace UnityHierarchyFolders.Editor
     [CustomEditor(typeof(Folder))]
     public class FolderEditor : UnityEditor.Editor
     {
-        private bool _expanded = false;
+        private static readonly string[] s_DefaultIconColorNames =
+            { "Default", "Yellow", "Blue", "Green", "Red" };
 
+        private bool _expanded;
 
-        static readonly string[] s_DefaultIconColorNames =
-            new[] { "Default", "Yellow", "Blue", "Green", "Red" };
-
-        public override bool RequiresConstantRepaint() => true;
         public override void OnInspectorGUI()
         {
-            this._expanded = EditorGUILayout.Foldout(this._expanded, "Icon Color", true);
-            if (this._expanded) { this.RenderColorPicker(); }
+            _expanded = EditorGUILayout.Foldout(_expanded, "Icon Color", true);
+            if (_expanded)
+                RenderColorPicker();
         }
-        void RenderColorPicker()
+
+        private void RenderColorPicker()
         {
             serializedObject.Update();
 
-            var colors = HierarchyFolderIcon.IconColors;
-            var names = s_DefaultIconColorNames;
-            if (names == null || names.Length != colors.Length)
-                names = Enumerable.Range(0, colors.Length).Select(i => $"Color {i}").ToArray();
+            Color[] colors = HierarchyFolderIcon.IconColors;
+            string[] names = s_DefaultIconColorNames.Length == colors.Length
+                ? s_DefaultIconColorNames
+                : null;
 
-            // Use the actual backing field name
-            var pIndex = serializedObject.FindProperty("_colorIndex");
+            SerializedProperty pIndex = serializedObject.FindProperty("_colorIndex");
             if (pIndex == null)
             {
                 EditorGUILayout.HelpBox("Missing '_colorIndex' property.", MessageType.Warning);
@@ -42,24 +40,25 @@ namespace UnityHierarchyFolders.Editor
             pIndex.intValue = Mathf.Clamp(pIndex.intValue, 0, colors.Length - 1);
 
             EditorGUI.BeginChangeCheck();
-            int newIndex = EditorGUILayout.Popup("Folder Color", pIndex.intValue , names);
+            int newIndex = names != null
+                ? EditorGUILayout.Popup("Folder Color", pIndex.intValue, names)
+                : EditorGUILayout.IntSlider("Folder Color", pIndex.intValue, 0, colors.Length - 1);
+
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(target, "Change Folder Color");
-                pIndex.intValue = newIndex;
+                pIndex.intValue = Mathf.Clamp(newIndex, 0, colors.Length - 1);
                 serializedObject.ApplyModifiedProperties();
                 EditorUtility.SetDirty(target);
-                // Force repaint so the icon updates immediately
                 HierarchyFolderIcon.ForceRepaint();
-                return; // avoid drawing preview with stale value this frame
+                return;
             }
 
-            var previewRect = GUILayoutUtility.GetRect(18, 18, GUILayout.ExpandWidth(false));
+            Rect previewRect = GUILayoutUtility.GetRect(18f, 18f, GUILayout.ExpandWidth(false));
             EditorGUI.DrawRect(previewRect, colors[pIndex.intValue]);
 
             serializedObject.ApplyModifiedProperties();
         }
-
     }
 }
 #endif
